@@ -624,7 +624,17 @@ function defautCompo(n){
 const totalCompo=c=>ORDRE.reduce((s,r)=>s+(c[r]||0),0);
 
 /* ---------- arbitrage (table) ---------- */
+async function viderNoeud(nom){
+  try{ await R(nom).remove(); return; }catch(e){}
+  try{
+    const s = await R(nom).once("value");
+    const v = s.val(); if(!v) return;
+    for(const k of Object.keys(v)){ try{ await R(nom+"/"+k).remove(); }catch(e){} }
+  }catch(e){}
+}
+
 async function distribuerRoles(){
+ try{
   const uids=Object.keys(JOUEURS);
   const paquet=[];
   ORDRE.forEach(r=>{ for(let k=0;k<(brouillonCompo[r]||0);k++) paquet.push(r); });
@@ -645,14 +655,18 @@ async function distribuerRoles(){
     if(attrib[u]==="voyante") o.vue={regards:0,sondage:true,vues:{}};
     majRoles[u]=o;
   });
+  await viderNoeud("actions");
+  await viderNoeud("votes");
+  await viderNoeud("demandes");
   await R("roles").set(majRoles);
   await R("prive").set({centre:centre,potion:true,sondage:true,regards:0,vues:{},echangeFait:false,cible:null,sauvee:false});
-  await R("actions").remove();
-  await R("votes").remove();
-  await R("demandes").remove();
   await R("etat").set({phase:"distribution",nuit:1,ordre:ord,vivants:vivantsMap,revele:{},
     compo:brouillonCompo,victime:null,sauvee:false,tire:null,chasseurUid:null,suite:null,
     revote:false,exaequo:[],resultat:null,fin:null,chronoFin:0,centreRevele:null});
+ }catch(e){
+   ERREUR="La distribution a échoué ("+(e&&e.code?e.code:e)+"). Vérifie que les règles de sécurité sont bien publiées dans Firebase.";
+   rendre();
+ }
 }
 
 async function traiterDemandes(){
@@ -730,13 +744,13 @@ async function pousserVues(){
 }
 
 async function nouvelleNuit(){
-  for(const u of ordre()) await R("roles/"+u+"/revelation").remove();
+  for(const u of ordre()){ try{ await R("roles/"+u+"/revelation").remove(); }catch(e){} }
   await R("prive").update({cible:null,sauvee:false});
   for(const u of ordre()){
     const r=(ROLESALL[u]||{}).role;
     if(r==="loup"||r==="sorciere") await R("roles/"+u+"/vue").update({cible:null,potion:PRIVE.potion!==false,versee:null});
   }
-  await R("actions").remove();
+  await viderNoeud("actions");
   await R("etat").update({phase:"nuit",nuit:(ETAT.nuit||1)+1,revote:false,exaequo:[],resultat:null});
 }
 
@@ -819,7 +833,7 @@ function brancher(){
   on("#rejoindre",async()=>{
     const v=($("#code-salon").value||"").trim().toUpperCase();
     if(v.length!==4){ $("#err").style.display="block"; return; }
-    const s=await db.ref("salons/"+v+"/meta").get();
+    const s=await db.ref("salons/"+v+"/meta").once("value");
     if(!s.exists()){ $("#err").style.display="block"; return; }
     CODE=v; MODE="joueur"; garder("lg_code",v); garder("lg_mode","joueur");
     abonner(); rendre();
@@ -833,7 +847,7 @@ function brancher(){
     rendre();
   });
   on("#quitter-siege",async()=>{ try{ await R("joueurs/"+ME).remove(); }catch(e){} rendre(); });
-  on("#vider",async()=>{ await R("joueurs").remove(); rendre(); });
+  on("#vider",async()=>{ await viderNoeud("joueurs"); rendre(); });
   on("#vers-compo",()=>{ brouillonCompo=defautCompo(Object.keys(JOUEURS).length); R("etat/phase").set("compo"); });
   on("#retour-salon",()=>R("etat/phase").set("salon"));
   on("#auto-compo",()=>{
@@ -848,17 +862,18 @@ function brancher(){
     const r=b.dataset.moins,min=r==="loup"?1:0;
     if((brouillonCompo[r]||0)>min) brouillonCompo[r]=brouillonCompo[r]-1; rendre(); });
   on("#distribuer",distribuerRoles);
-  on("#vers-nuit",async()=>{ await R("actions").remove(); await R("etat/phase").set("nuit"); });
-  on("#lever-jour",leverJour);
+  on("#vers-nuit",async()=>{ await viderNoeud("actions"); await R("etat/phase").set("nuit"); });
+  on("#lever-jour",()=>leverJour().catch(e=>{ ERREUR="Impossible de lever le jour ("+(e&&e.code?e.code:e)+")."; rendre(); }));
   on("#apres-matin",apresMatin);
   on("#apres-tir",apresTir);
   on("#ouvrir-ultime",()=>R("etat").update({phase:"debat",revote:false,chronoFin:Date.now()+300000}));
-  on("#aller-vote",async()=>{ await R("votes").remove(); await R("etat/phase").set("vote"); });
+  on("#aller-vote",async()=>{ await viderNoeud("votes"); await R("etat/phase").set("vote"); });
   on("#depouiller",depouiller);
   on("#revoter",()=>R("etat").update({phase:"debat",revote:true,chronoFin:Date.now()+300000}));
   on("#apres-vote",apresVote);
   on("#rejouer",async()=>{
-    await R("actions").remove(); await R("votes").remove(); await R("demandes").remove(); await R("roles").remove();
+    await viderNoeud("actions"); await viderNoeud("votes"); await viderNoeud("demandes");
+    try{ await R("roles").remove(); }catch(e){}
     await R("etat").set({phase:"salon",nuit:0,ordre:[],vivants:{},revele:{}});
   });
 
