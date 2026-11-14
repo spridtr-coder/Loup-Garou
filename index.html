@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0A0709">
+<title>Le jeu du Loup-Garou</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Karla:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --noir:#0A0709; --carte:#150D10; --rouge:#9B141A; --rouge-vif:#C2262A;
+    --rouge-sourd:#B8867F; --rouge-nuit:#3E080B; --blanc:#FFFFFF;
+    --bord:rgba(155,20,26,.42);
+    --ecran:Karla,"Helvetica Neue",Arial,sans-serif;
+    --titre:Fraunces,Georgia,"Times New Roman",serif;
+    --chiffre:"Space Mono",Menlo,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--noir);min-height:100%}
+  body{color:var(--rouge-sourd);font-family:var(--ecran);
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:calc(20px + env(safe-area-inset-top,0px)) 150px;position:relative}
+  #decor{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5}
+  #decor svg{width:100%;height:100%;display:block}
+  .wrap{position:relative;z-index:2;max-width:560px;margin:0 auto}
+  h1,h2,h3{font-family:var(--titre);font-weight:900;margin:0;line-height:1.06;color:var(--rouge)}
+  h1{font-size:2.1rem;letter-spacing:-.02em}
+  h2{font-size:1.55rem}
+  h3{font-size:1.05rem;font-weight:600}
+  p{line-height:1.5;margin:.6em 0}
+  .eyebrow{font-family:var(--chiffre);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--rouge);margin-bottom:12px;display:block}
+  .doux{opacity:.78} .grand{font-size:1.1rem;line-height:1.45} .centre{text-align:center}
+  .prenom{font-family:var(--titre);font-weight:900;color:var(--blanc);font-size:2.4rem;line-height:1.05;margin:4px 0 2px}
+  .prenom-mid{font-family:var(--titre);font-weight:900;color:var(--blanc);font-size:1.45rem;line-height:1.3}
+  .code{font-family:var(--chiffre);font-size:3rem;font-weight:700;color:var(--blanc);
+    letter-spacing:.3em;text-align:center;margin:10px 0 4px}
+  .carte{background:var(--carte);border:1px solid var(--bord);border-radius:14px;padding:18px;margin:14px 0}
+  button{font-family:var(--ecran);font-size:1rem;font-weight:600;border-radius:11px;border:1px solid var(--bord);
+    background:var(--carte);color:var(--rouge-sourd);padding:15px 16px;width:100%;cursor:pointer;
+    transition:transform .12s ease,opacity .2s ease}
+  button:active{transform:scale(.975)}
+  button:focus-visible{outline:2px solid var(--rouge-vif);outline-offset:2px}
+  button[disabled]{opacity:.35;cursor:default}
+  .primaire{background:var(--rouge);color:#fff;border-color:transparent;font-weight:800}
+  .danger{background:var(--rouge-nuit);color:#fff;border-color:var(--rouge);font-weight:800}
+  .liste{display:grid;gap:9px;margin:16px 0}
+  .nom{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left}
+  .nom b{flex:1;min-width:0;color:var(--blanc);font-weight:800;font-size:1.02rem}
+  .tag{font-family:var(--chiffre);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--rouge);white-space:nowrap}
+  .tag.ok{color:var(--rouge-sourd);opacity:.55} .tag.mort{color:var(--rouge-vif)}
+  input[type=text]{width:100%;padding:14px;font-size:1.05rem;font-family:var(--ecran);font-weight:600;
+    background:var(--carte);color:var(--blanc);border:1px solid var(--bord);border-radius:11px}
+  input.codeinput{font-family:var(--chiffre);font-size:1.8rem;letter-spacing:.4em;text-align:center;text-transform:uppercase}
+  input::placeholder{color:var(--rouge-sourd);opacity:.4;font-weight:400;letter-spacing:normal}
+  .role-carte{border:1px solid var(--bord);border-radius:16px;padding:20px;text-align:center;
+    background:var(--carte);margin:16px 0;animation:apparait .45s ease}
+  .role-img{width:130px;height:130px;max-width:100%;border-radius:12px;object-fit:cover;
+    border:1px solid var(--bord);display:block;margin:0 auto 14px}
+  .role-nom{font-family:var(--titre);font-size:1.95rem;font-weight:900;color:var(--rouge);margin:0 0 8px}
+  .equipe{font-family:var(--chiffre);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;opacity:.7}
+  @keyframes apparait{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .embleme{width:78px;margin:0 auto 16px;color:var(--rouge);display:block}
+  .embleme svg{width:100%;height:auto;display:block}
+  .embleme.petit{width:52px;margin-bottom:12px}
+  .ico{width:22px;height:22px;flex:none;color:var(--rouge)}
+  .ico svg{width:100%;height:100%;display:block}
+  .chrono{font-family:var(--chiffre);font-size:3.6rem;font-weight:700;text-align:center;
+    color:var(--blanc);margin:18px 0 6px;font-variant-numeric:tabular-nums}
+  .chrono.urgent{color:var(--rouge-vif)}
+  .barres{display:grid;gap:11px;margin:18px 0}
+  .barre-nom{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .barre-nom b{color:var(--blanc);font-size:1rem;font-weight:800}
+  .barre-fond{height:9px;background:rgba(155,20,26,.28);border-radius:5px;overflow:hidden}
+  .barre-fond span{display:block;height:100%;background:var(--rouge);transition:width .5s ease}
+  .avis{border-left:3px solid var(--rouge);padding:3px 0 3px 13px;margin:16px 0;font-size:.92rem}
+  hr{border:0;border-top:1px solid var(--bord);margin:22px 0}
+  .compo-ligne{display:flex;align-items:center;gap:11px;background:var(--carte);
+    border:1px solid var(--bord);border-radius:13px;padding:10px 12px;margin-bottom:9px}
+  .compo-vignette{width:46px;height:46px;border-radius:10px;overflow:hidden;flex:none;border:1px solid var(--bord)}
+  .compo-vignette img{width:100%;height:100%;object-fit:cover;display:block}
+  .compo-txt{flex:1;min-width:0}
+  .compo-txt b{color:var(--blanc);font-size:.98rem;font-weight:800;display:block}
+  .compo-txt span{font-size:.7rem;opacity:.72}
+  .compteur{display:flex;align-items:center;gap:7px;flex:none}
+  .compteur button{width:38px;height:38px;padding:0;font-size:1.2rem;font-family:var(--chiffre);border-radius:9px}
+  .compteur .val{font-family:var(--chiffre);font-size:1.1rem;font-weight:700;color:var(--blanc);min-width:20px;text-align:center}
+  .bilan{border:1px dashed var(--bord);border-radius:12px;padding:13px;text-align:center;margin:14px 0}
+  .bilan b{color:var(--blanc);font-size:1.1rem}
+  .attente{display:flex;align-items:center;justify-content:center;gap:10px;margin:22px 0;
+    font-family:var(--chiffre);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--rouge)}
+  .braise{width:9px;height:9px;border-radius:50%;background:var(--rouge);animation:battre 1.8s ease-in-out infinite}
+  @keyframes battre{0%,100%{opacity:.25}50%{opacity:1}}
+  #profils{position:fixed;left:0;right:0;bottom:0;z-index:5;flex-wrap:wrap;
+    background:linear-gradient(to top,var(--noir) 62%,rgba(10,7,9,.92));border-top:1px solid var(--bord);
+    padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));
+    padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));display:none;justify-content:center;gap:6px}
+  .profil{flex:1;max-width:104px;text-align:center}
+  .rond{position:relative;width:72px;max-width:100%;aspect-ratio:1;margin:0 auto 7px;border-radius:50%;
+    border:2px solid var(--bord);overflow:hidden;background:var(--carte);display:flex;align-items:center;justify-content:center}
+  .rond img{width:100%;height:100%;object-fit:cover;filter:grayscale(.18) brightness(.95)}
+  .rond svg{width:40px;height:40px;fill:var(--rouge);opacity:.75}
+  .profil.mort .rond{border-color:var(--rouge-vif)}
+  .profil.mort .rond::before,.profil.mort .rond::after{content:"";position:absolute;left:50%;top:50%;
+    width:150%;height:3.5px;background:var(--rouge-vif)}
+  .profil.mort .rond::before{transform:translate(-50%,-50%) rotate(45deg)}
+  .profil.mort .rond::after{transform:translate(-50%,-50%) rotate(-45deg)}
+  .p-nom{font-size:.84rem;font-weight:800;color:var(--blanc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .p-role{font-family:var(--chiffre);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--rouge)}
+  .profil.mort .p-nom{opacity:.5;text-decoration:line-through;color:var(--rouge-sourd)}
+  #son{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));
+    z-index:9;width:44px;height:44px;padding:0;border-radius:50%;display:none;align-items:center;justify-content:center;
+    background:var(--carte);border:1px solid var(--bord);color:var(--rouge)}
+  #son svg{width:22px;height:22px} #son.muet{opacity:.45}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="decor"></div>
+<div class="wrap"><div id="app"></div></div>
+<div id="profils"></div>
+<button id="son" aria-label="Voix du narrateur"></button>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBMDb_kVjKDDVvB84z_PflAbZyNg4Fk9Vs",
+  authDomain: "loup-garou-34828.firebaseapp.com",
+  databaseURL: "https://loup-garou-34828-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "loup-garou-34828",
+  storageBucket: "loup-garou-34828.firebasestorage.app",
+  messagingSenderId: "1038706122640",
+  appId: "1:1038706122640:web:7811b961f9e42684221d15"
+};
+
+const IMG = {"loup": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxwYXRoIGQ9Ik0xOCAyNjBjMC01MCA1MC03OCAxMTItNzhzMTEyIDI4IDExMiA3OHoiIGZpbGw9IiMyMjI2MkMiLz4KICA8cGF0aCBkPSJNNDAgMjQ0bDE0LTI2IDE2IDI0IDE0LTI4IDE2IDI2IDE2LTMwIDE0IDMwIDE2LTI2IDE0IDI4IDE2LTI0IDE0IDI2eiIgZmlsbD0iIzJFMzMzQiIvPgogIDxwYXRoIGQ9Ik01OCAxMDZMNjYgMjJsNTIgNDR6IiBmaWxsPSIjMkUzMzNCIi8+CiAgPHBhdGggZD0iTTIwMiAxMDZMMTk0IDIybC01MiA0NHoiIGZpbGw9IiMyRTMzM0IiLz4KICA8cGF0aCBkPSJNNzQgOTZMNzkgNDZsMzAgMjZ6IiBmaWxsPSIjNUUzMDM4Ii8+CiAgPHBhdGggZD0iTTE4NiA5NkwxODEgNDZsLTMwIDI2eiIgZmlsbD0iIzVFMzAzOCIvPgogIDxwYXRoIGQ9Ik01NiAxMDRjMC0zNiAzMy01OCA3NC01OHM3NCAyMiA3NCA1OHYxNGMwIDM0LTE4IDU2LTQwIDY4aC02OGMtMjItMTItNDAtMzQtNDAtNjh6IiBmaWxsPSIjM0E0MDQ4Ii8+CiAgPHBhdGggZD0iTTU2IDExOGwtMTYgMzQgMjYtNiA0IDIyIDE4LTE2eiIgZmlsbD0iIzJFMzMzQiIvPgogIDxwYXRoIGQ9Ik0yMDQgMTE4bDE2IDM0LTI2LTYtNCAyMi0xOC0xNnoiIGZpbGw9IiMyRTMzM0IiLz4KICA8cGF0aCBkPSJNOTYgNzRjMTAtMTIgMjQtMTggMzQtMThzMjQgNiAzNCAxOGMtMTIgNDItNTYgNDItNjggMHoiIGZpbGw9IiM0QTUwNTgiLz4KICA8cGF0aCBkPSJNNzggMTE2YzEyLTE0IDMwLTE0IDQwIDItMTQgMTAtMzAgMTAtNDAtMnoiIGZpbGw9IiNDMjI2MkEiLz4KICA8cGF0aCBkPSJNMTgyIDExNmMtMTItMTQtMzAtMTQtNDAgMiAxNCAxMCAzMCAxMCA0MC0yeiIgZmlsbD0iI0MyMjYyQSIvPgogIDxlbGxpcHNlIGN4PSI5OSIgY3k9IjExOCIgcng9IjUiIHJ5PSI4IiBmaWxsPSIjMTUwRDEwIi8+CiAgPGVsbGlwc2UgY3g9IjE2MSIgY3k9IjExOCIgcng9IjUiIHJ5PSI4IiBmaWxsPSIjMTUwRDEwIi8+CiAgPHBhdGggZD0iTTEwMCAxNDZoNjB2MzRjMCAyMC0xNCAzNC0zMCAzNHMtMzAtMTQtMzAtMzR6IiBmaWxsPSIjOEU5MzlCIi8+CiAgPHBhdGggZD0iTTExMiAxNTBoMzZ2MjZjMCAxMi04IDIwLTE4IDIwcy0xOC04LTE4LTIweiIgZmlsbD0iI0I0QjlDMCIvPgogIDxwYXRoIGQ9Ik0xMTQgMTUyaDMyYzQgMCA2IDQgNCA4bC0xNCAxNmMtMyAzLTcgMy0xMCAwbC0xNC0xNmMtMi00IDAtOCA0LTh6IiBmaWxsPSIjMTAwRTEwIi8+CiAgPHBhdGggZD0iTTEwNCAxOTZjMTQgMTIgMzggMTIgNTIgMC00IDE2LTE4IDI0LTI2IDI0cy0yMi04LTI2LTI0eiIgZmlsbD0iIzEwMEUxMCIvPgogIDxwYXRoIGQ9Ik0xMTQgMjAwbDcgMTYgNi0xNXpNMTQ2IDIwMGwtNyAxNi02LTE1eiIgZmlsbD0iI0YyRURFNiIvPgo8L3N2Zz4=", "sorciere": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxwYXRoIGQ9Ik0zNCAyNjBjMC00NCA0Mi03MCA5Ni03MHM5NiAyNiA5NiA3MHoiIGZpbGw9IiMyNjIwM0EiLz4KICA8cGF0aCBkPSJNNjAgMjYwYzAtMzAgMzItNTAgNzAtNTBzNzAgMjAgNzAgNTB6IiBmaWxsPSIjMUIxNzMwIi8+CiAgPHBhdGggZD0iTTcwIDk2Yy0xNCAzNC0xNiA3NC04IDEwOCAxNC0xNCAyMC00MiAyMC03MHpNMTkwIDk2YzE0IDM0IDE2IDc0IDggMTA4LTE0LTE0LTIwLTQyLTIwLTcweiIgZmlsbD0iIzlBOTRBNiIvPgogIDxwYXRoIGQ9Ik0xMTIgMTU4aDM2djMyaC0zNnoiIGZpbGw9IiNCOEE3NzYiLz4KICA8cGF0aCBkPSJNODQgOTZjMC0zMCAyMC00OCA0Ni00OHM0NiAxOCA0NiA0OHYxOGMwIDM2LTIwIDYwLTQ2IDYwcy00Ni0yNC00Ni02MHoiIGZpbGw9IiNDRkJFOEMiLz4KICA8cGF0aCBkPSJNODggMTI4YzggMjAgMjAgMzAgNDIgMzBzMzQtMTAgNDItMzBjLTYgMjgtMjIgNDQtNDIgNDRzLTM2LTE2LTQyLTQ0eiIgZmlsbD0iI0JDQTk3QSIvPgogIDxlbGxpcHNlIGN4PSIxMDYiIGN5PSIxMDYiIHJ4PSIxMSIgcnk9IjEwIiBmaWxsPSIjRjJFREU2Ii8+CiAgPGNpcmNsZSBjeD0iMTA4IiBjeT0iMTA3IiByPSI1IiBmaWxsPSIjMkU0MjMwIi8+CiAgPGVsbGlwc2UgY3g9IjE1NCIgY3k9IjEwNiIgcng9IjExIiByeT0iMTAiIGZpbGw9IiNGMkVERTYiLz4KICA8Y2lyY2xlIGN4PSIxNTIiIGN5PSIxMDciIHI9IjUiIGZpbGw9IiMyRTQyMzAiLz4KICA8cGF0aCBkPSJNOTIgOTJjMTAtOCAyMi04IDMwLTItMTAtMi0yMC0xLTMwIDJ6TTE2OCA5MmMtMTAtOC0yMi04LTMwLTIgMTAtMiAyMC0xIDMwIDJ6IiBmaWxsPSIjOEE4NDk0Ii8+CiAgPHBhdGggZD0iTTEyOCAxMDhjOCAxMCAxNCAyMiAxMiAzMi0yIDgtMTAgMTItMTggMTAgOC0yIDEyLTYgMTItMTJzLTQtMTQtMTAtMjJ6IiBmaWxsPSIjQkNBOTdBIi8+CiAgPGNpcmNsZSBjeD0iMTQwIiBjeT0iMTQwIiByPSI0IiBmaWxsPSIjOEU3QjUyIi8+CiAgPHBhdGggZD0iTTExMCAxNTZjMTQgMTAgMzAgMTAgNDItMi0xMCAxNC0zMCAxNi00MiAyeiIgZmlsbD0iIzZCNEEzQyIvPgogIDxwYXRoIGQ9Ik0xMzAgNGMxNCAxOCAzMCA0OCA0MiA3NC0yNi0xMi01OC0xMi04NCAwIDEyLTI2IDI4LTU2IDQyLTc0eiIgZmlsbD0iIzI0MUUzMCIvPgogIDxwYXRoIGQ9Ik01MiA4NGMyNi0xNiAxMzAtMTYgMTU2IDAgMTAgNiA3IDE2LTYgMTZINThjLTEzIDAtMTYtMTAtNi0xNnoiIGZpbGw9IiMxQjE3MjgiLz4KICA8cGF0aCBkPSJNOTIgNzZjMjQtOCA1Mi04IDc2IDAtMjQgNi01MiA2LTc2IDB6IiBmaWxsPSIjOEUxQTFFIi8+CiAgPHBhdGggZD0iTTc0IDIxOGgxMTJjMCAyNi0yNCA0Mi01NiA0MnMtNTYtMTYtNTYtNDJ6IiBmaWxsPSIjNEEzQTJFIi8+CiAgPHBhdGggZD0iTTY4IDIxMGgxMjR2MTJINjh6IiBmaWxsPSIjNUM0ODM4Ii8+CiAgPHBhdGggZD0iTTg4IDIxNmg4NGMtNCAxMC0yMCAxNi00MiAxNnMtMzgtNi00Mi0xNnoiIGZpbGw9IiMzRTdBNTUiLz4KICA8Y2lyY2xlIGN4PSIxMTIiIGN5PSIyMDQiIHI9IjYiIGZpbGw9IiM0RTk0NjQiLz4KICA8Y2lyY2xlIGN4PSIxMzYiIGN5PSIxOTQiIHI9IjQuNSIgZmlsbD0iIzRFOTQ2NCIvPgogIDxjaXJjbGUgY3g9IjE1MiIgY3k9IjIwNiIgcj0iNSIgZmlsbD0iIzRFOTQ2NCIvPgogIDxwYXRoIGQ9Ik03OCAyNjBjNi0xNCAxNi0yMiAyNi0yNC0xMCA4LTE2IDE2LTE4IDI0ek0xODIgMjYwYy02LTE0LTE2LTIyLTI2LTI0IDEwIDggMTYgMTYgMTggMjR6IiBmaWxsPSIjOEUxQTFFIi8+Cjwvc3ZnPg==", "chasseur": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxwYXRoIGQ9Ik0yOCAyNjBjMC00NiA0NC03MiAxMDItNzJzMTAyIDI2IDEwMiA3MnoiIGZpbGw9IiMzRTRBMzIiLz4KICA8cGF0aCBkPSJNOTIgMTk0aDc2djY2SDkyeiIgZmlsbD0iIzRBNTczOCIvPgogIDxwYXRoIGQ9Ik0xMDAgMjAwaDEwdjYwaC0xMHpNMTUwIDIwMGgxMHY2MGgtMTB6IiBmaWxsPSIjMzM0MDJBIi8+CiAgPHBhdGggZD0iTTI4IDI0NGgyMDR2MTRIMjh6IiBmaWxsPSIjNUE0MDI4Ii8+CiAgPHBhdGggZD0iTTExOCAyNDBoMjR2MjJoLTI0eiIgZmlsbD0iI0I5OTQ2MSIvPgogIDxwYXRoIGQ9Ik0xMTIgMTYwaDM2djMyaC0zNnoiIGZpbGw9IiNDOThGNjYiLz4KICA8ZWxsaXBzZSBjeD0iNzYiIGN5PSIxMjIiIHJ4PSIxMCIgcnk9IjE0IiBmaWxsPSIjRTNBQzgxIi8+CiAgPGVsbGlwc2UgY3g9IjE4NCIgY3k9IjEyMiIgcng9IjEwIiByeT0iMTQiIGZpbGw9IiNFM0FDODEiLz4KICA8cGF0aCBkPSJNODIgOThjMC0zMCAyMS00OCA0OC00OHM0OCAxOCA0OCA0OHYyMGMwIDM2LTIxIDYwLTQ4IDYwcy00OC0yNC00OC02MHoiIGZpbGw9IiNFM0FDODEiLz4KICA8cGF0aCBkPSJNOTQgMTEwYzEwLTkgMjQtOSAzMiAwLTEwIDctMjIgNy0zMiAweiIgZmlsbD0iI0YyRURFNiIvPgogIDxjaXJjbGUgY3g9IjExMCIgY3k9IjExMCIgcj0iNSIgZmlsbD0iIzJBNEE1QSIvPgogIDxwYXRoIGQ9Ik0xMzQgMTEwYzEwLTkgMjQtOSAzMiAwLTEwIDctMjIgNy0zMiAweiIgZmlsbD0iI0YyRURFNiIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjExMCIgcj0iNSIgZmlsbD0iIzJBNEE1QSIvPgogIDxwYXRoIGQ9Ik05MCA5NmMxMi0xMCAyNi0xMCAzNi00LTEyLTQtMjQtMy0zNiA0ek0xNzAgOTZjLTEyLTEwLTI2LTEwLTM2LTQgMTItNCAyNC0zIDM2IDR6IiBmaWxsPSIjOEE1QTJBIi8+CiAgPHBhdGggZD0iTTEzMCAxNDBjLTE2LTEwLTM0LTYtNDAgNiAxMiAxMiAzMCAxMiA0MCAwIDEwIDEyIDI4IDEyIDQwIDAtNi0xMi0yNC0xNi00MC02eiIgZmlsbD0iI0E4NjUyRSIvPgogIDxwYXRoIGQ9Ik0xMTQgMTU4aDMyYy02IDgtMjYgOC0zMiAweiIgZmlsbD0iIzdBNEEzQyIvPgogIDxwYXRoIGQ9Ik04NiA5MmMwLTI4IDIwLTQ0IDQ0LTQ0czQ0IDE2IDQ0IDQ0Yy0yMi0xMi02Ni0xMi04OCAweiIgZmlsbD0iIzNFNEEzMiIvPgogIDxwYXRoIGQ9Ik00NiA5MmMyNC0xNCAxNDQtMTQgMTY4IDAgMTAgNiA3IDE2LTYgMTZINTJjLTEzIDAtMTYtMTAtNi0xNnoiIGZpbGw9IiMzMzQwMkEiLz4KICA8cGF0aCBkPSJNODggODRjMjYtOCA1OC04IDg0IDAiIHN0cm9rZT0iIzVBNDAyOCIgc3Ryb2tlLXdpZHRoPSI3IiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTE4IDIzNkwxNDIgMTI4bDE0IDE2TDMyIDI1MnoiIGZpbGw9IiM1QTNFMjQiLz4KICA8cGF0aCBkPSJNMTQyIDEyOEwyNDYgNDBsMTIgMTQtMTA0IDkweiIgZmlsbD0iIzIyMjYyQyIvPgogIDxwYXRoIGQ9Ik0xNzIgOTJsMzAgMjYiIHN0cm9rZT0iIzIyMjYyQyIgc3Ryb2tlLXdpZHRoPSI5Ii8+CiAgPHBhdGggZD0iTTE4NiA3NGwzNCA4LTYgMjItMzQtMTB6IiBmaWxsPSIjMkUzMzNCIi8+Cjwvc3ZnPg==", "voyante": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxwYXRoIGQ9Ik0yMCAyNjBjMC00OCA0OC03NiAxMTAtNzZzMTEwIDI4IDExMCA3NnoiIGZpbGw9IiM0QTFCMzMiLz4KICA8cGF0aCBkPSJNNTYgMjYwYzAtMzAgMzQtNTAgNzQtNTBzNzQgMjAgNzQgNTB6IiBmaWxsPSIjM0ExNDI4Ii8+CiAgPHBhdGggZD0iTTcyIDkwYy0xNiA0MC0xOCA4NC0xMCAxMjIgMTYtMTYgMjItNDggMjItODB6TTE4OCA5MGMxNiA0MCAxOCA4NCAxMCAxMjItMTYtMTYtMjItNDgtMjItODB6IiBmaWxsPSIjN0EzQTI4Ii8+CiAgPHBhdGggZD0iTTExMiAxNTZoMzZ2MzJoLTM2eiIgZmlsbD0iI0M5OEY2NiIvPgogIDxwYXRoIGQ9Ik04NCA5NGMwLTMwIDIwLTQ4IDQ2LTQ4czQ2IDE4IDQ2IDQ4djE4YzAgMzYtMjAgNTgtNDYgNThzLTQ2LTIyLTQ2LTU4eiIgZmlsbD0iI0UzQUM4MSIvPgogIDxlbGxpcHNlIGN4PSIxMDciIGN5PSIxMDQiIHJ4PSIxMyIgcnk9IjExIiBmaWxsPSIjRjJFREU2Ii8+CiAgPGNpcmNsZSBjeD0iMTA5IiBjeT0iMTA1IiByPSI2IiBmaWxsPSIjMkU1QTVBIi8+CiAgPGVsbGlwc2UgY3g9IjE1MyIgY3k9IjEwNCIgcng9IjEzIiByeT0iMTEiIGZpbGw9IiNGMkVERTYiLz4KICA8Y2lyY2xlIGN4PSIxNTEiIGN5PSIxMDUiIHI9IjYiIGZpbGw9IiMyRTVBNUEiLz4KICA8cGF0aCBkPSJNOTIgODhjMTItMTAgMjYtMTAgMzQtMi0xMi00LTI0LTMtMzQgMnpNMTY4IDg4Yy0xMi0xMC0yNi0xMC0zNC0yIDEyLTQgMjQtMyAzNCAyeiIgZmlsbD0iIzVBMkExRSIvPgogIDxwYXRoIGQ9Ik0xMzAgMTA4YzYgMTAgMTAgMjAgOCAyOC0yIDYtOCA5LTE0IDggNi0yIDktNSA5LTEwcy0yLTE0LTMtMjZ6IiBmaWxsPSIjRDE5QTcwIi8+CiAgPHBhdGggZD0iTTExNCAxNTJjMTAgOCAyMiA4IDMyIDAtOCAxMi0yNCAxMi0zMiAweiIgZmlsbD0iIzhFMUExRSIvPgogIDxwYXRoIGQ9Ik04MiA4OGMwLTMwIDIxLTQ2IDQ4LTQ2czQ4IDE2IDQ4IDQ2Yy0yNC0xNC03Mi0xNC05NiAweiIgZmlsbD0iIzhFMUExRSIvPgogIDxwYXRoIGQ9Ik0xNzggNjBjMTYgNCAzMCAxNiAzNCAzMi0xNC02LTI2LTE2LTM0LTMyeiIgZmlsbD0iIzZFMTIxNiIvPgogIDxjaXJjbGUgY3g9IjEwNCIgY3k9IjYyIiByPSI1IiBmaWxsPSIjQzlBMjI3Ii8+CiAgPGNpcmNsZSBjeD0iMTMwIiBjeT0iNTQiIHI9IjUiIGZpbGw9IiNDOUEyMjciLz4KICA8Y2lyY2xlIGN4PSIxNTYiIGN5PSI2MiIgcj0iNSIgZmlsbD0iI0M5QTIyNyIvPgogIDxnIHN0cm9rZT0iI0M5QTIyNyIgc3Ryb2tlLXdpZHRoPSI2IiBmaWxsPSJub25lIj4KICAgIDxlbGxpcHNlIGN4PSI3NiIgY3k9IjEyNiIgcng9IjEyIiByeT0iMTYiLz4KICAgIDxlbGxpcHNlIGN4PSIxODQiIGN5PSIxMjYiIHJ4PSIxMiIgcnk9IjE2Ii8+CiAgPC9nPgogIDxwYXRoIGQ9Ik01NiAyNDZjLTYtMjQgNC00NCAyMC00OCAxMC0yIDE2IDYgMTIgMTYtNCAxMi02IDIyLTQgMzJ6IiBmaWxsPSIjRTNBQzgxIi8+CiAgPHBhdGggZD0iTTIwNCAyNDZjNi0yNC00LTQ0LTIwLTQ4LTEwLTItMTYgNi0xMiAxNiA0IDEyIDYgMjIgNCAzMnoiIGZpbGw9IiNFM0FDODEiLz4KICA8Y2lyY2xlIGN4PSIxMzAiIGN5PSIyMTgiIHI9IjQ4IiBmaWxsPSIjMUUzNDM4Ii8+CiAgPGNpcmNsZSBjeD0iMTMwIiBjeT0iMjE4IiByPSI0MiIgZmlsbD0iI0JDRDJEOCIvPgogIDxjaXJjbGUgY3g9IjEzMCIgY3k9IjIxOCIgcj0iNDIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0U2RjBGMiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGVsbGlwc2UgY3g9IjExNCIgY3k9IjIwMiIgcng9IjEzIiByeT0iOSIgZmlsbD0iI0VERjRGNiIgdHJhbnNmb3JtPSJyb3RhdGUoLTMwIDExNCAyMDIpIi8+CiAgPGNpcmNsZSBjeD0iMTQ4IiBjeT0iMjM2IiByPSI2IiBmaWxsPSIjRENFOUVDIi8+CiAgPHBhdGggZD0iTTk2IDI1NGg2OGMtNCA2LTE4IDEwLTM0IDEwcy0zMC00LTM0LTEweiIgZmlsbD0iI0M5QTIyNyIvPgo8L3N2Zz4=", "voleur": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxwYXRoIGQ9Ik0yOCAyNjBjMC00NiA0NC03MiAxMDItNzJzMTAyIDI2IDEwMiA3MnoiIGZpbGw9IiMyQjM2MjYiLz4KICA8cGF0aCBkPSJNMjggMjMyaDIwNE0zNCAyMTRoMTkyTTQ2IDE5OGgxNjgiIHN0cm9rZT0iIzFEMjUxOSIgc3Ryb2tlLXdpZHRoPSI3IiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTEwOCAxNjhoNDR2MzRoLTQ0eiIgZmlsbD0iI0M5OEY2NiIvPgogIDxlbGxpcHNlIGN4PSI3MiIgY3k9IjEzMCIgcng9IjExIiByeT0iMTQiIGZpbGw9IiNFM0FDODEiLz4KICA8ZWxsaXBzZSBjeD0iMTg4IiBjeT0iMTMwIiByeD0iMTEiIHJ5PSIxNCIgZmlsbD0iI0UzQUM4MSIvPgogIDxwYXRoIGQ9Ik03OCAxMDRjMC0zMiAyMy01MiA1Mi01MnM1MiAyMCA1MiA1MnYyMmMwIDM4LTIzIDYyLTUyIDYycy01Mi0yNC01Mi02MnoiIGZpbGw9IiNFM0FDODEiLz4KICA8cGF0aCBkPSJNNzAgMTAwYzItMzggMjgtNTggNjAtNThzNTggMjAgNjAgNThjLTI2LTE0LTk0LTE0LTEyMCAweiIgZmlsbD0iIzM5MzAxRiIvPgogIDxwYXRoIGQ9Ik01OCA5OGMxOC0xMSAxMjYtMTEgMTQ0IDAgNyA0IDUgMTItNCAxMkg2MmMtOSAwLTExLTgtNC0xMnoiIGZpbGw9IiMyNDFFMTQiLz4KICA8cGF0aCBkPSJNNzQgMTA2aDExMnYyOGMwIDktNyAxNS0xNyAxNWgtNzhjLTEwIDAtMTctNi0xNy0xNXoiIGZpbGw9IiMwQjBBMEIiLz4KICA8ZWxsaXBzZSBjeD0iMTAzIiBjeT0iMTIwIiByeD0iMTQiIHJ5PSI5IiBmaWxsPSIjRjJFREU2Ii8+CiAgPGNpcmNsZSBjeD0iMTA2IiBjeT0iMTIxIiByPSI0LjUiIGZpbGw9IiMwQjBBMEIiLz4KICA8ZWxsaXBzZSBjeD0iMTU3IiBjeT0iMTIwIiByeD0iMTQiIHJ5PSI5IiBmaWxsPSIjRjJFREU2Ii8+CiAgPGNpcmNsZSBjeD0iMTU0IiBjeT0iMTIxIiByPSI0LjUiIGZpbGw9IiMwQjBBMEIiLz4KICA8cGF0aCBkPSJNMTAwIDE2MGMxMiAxMyAzNiAxNCA1MiAyLTE2IDItMzggMS01Mi0yeiIgZmlsbD0iI0YyRURFNiIvPgogIDxwYXRoIGQ9Ik0xMDAgMTYwYzEyIDEzIDM2IDE0IDUyIDIiIHN0cm9rZT0iIzdBNTIzNiIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8ZyBzdHJva2U9IiM5QjE0MUEiIHN0cm9rZS13aWR0aD0iNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxjaXJjbGUgY3g9IjIxMiIgY3k9IjIwNCIgcj0iMTUiLz4KICAgIDxwYXRoIGQ9Ik0yMTIgMjE5djI2TTIwNSAyMzZoN00yMDUgMjQ1aDciLz4KICA8L2c+Cjwvc3ZnPg==", "villageois": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxnIHN0cm9rZT0iIzhBNkEzRSIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik0yMjYgMjUwIDIwOCA5NiIvPjwvZz4KICA8ZyBzdHJva2U9IiNCOTk0NjEiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik0yMDggOTZ2LTM0TTIwOCA3NGwtMTYtMThNMjA4IDc0bDE2LTE4Ii8+CiAgPC9nPgogIDxwYXRoIGQ9Ik0zMCAyNjBjMC00NCA0Mi03MCAxMDAtNzBzMTAwIDI2IDEwMCA3MHoiIGZpbGw9IiMzMzQ1NUUiLz4KICA8cGF0aCBkPSJNOTYgMTk2aDY4YzE0IDYgMjQgMTYgMzAgMjhINjZjNi0xMiAxNi0yMiAzMC0yOHoiIGZpbGw9IiM4RTFBMUUiLz4KICA8cGF0aCBkPSJNMTA0IDIwMGgxNHY2MGgtMTR6TTE0MiAyMDBoMTR2NjBoLTE0eiIgZmlsbD0iIzMzNDU1RSIvPgogIDxjaXJjbGUgY3g9IjExMSIgY3k9IjIxMiIgcj0iNSIgZmlsbD0iI0M5QjA4QSIvPgogIDxjaXJjbGUgY3g9IjE0OSIgY3k9IjIxMiIgcj0iNSIgZmlsbD0iI0M5QjA4QSIvPgogIDxwYXRoIGQ9Ik0xMTAgMTY0aDQwdjM0aC00MHoiIGZpbGw9IiNDOThGNjYiLz4KICA8ZWxsaXBzZSBjeD0iNzQiIGN5PSIxMjYiIHJ4PSIxMSIgcnk9IjE0IiBmaWxsPSIjRTNBQzgxIi8+CiAgPGVsbGlwc2UgY3g9IjE4NiIgY3k9IjEyNiIgcng9IjExIiByeT0iMTQiIGZpbGw9IiNFM0FDODEiLz4KICA8cGF0aCBkPSJNODAgMTAwYzAtMzEgMjItNTAgNTAtNTBzNTAgMTkgNTAgNTB2MjRjMCAzNy0yMiA2MC01MCA2MHMtNTAtMjMtNTAtNjB6IiBmaWxsPSIjRTNBQzgxIi8+CiAgPGVsbGlwc2UgY3g9IjEwNyIgY3k9IjExMCIgcng9IjEwIiByeT0iMTEiIGZpbGw9IiNGMkVERTYiLz4KICA8Y2lyY2xlIGN4PSIxMDgiIGN5PSIxMTEiIHI9IjUiIGZpbGw9IiMyQTNBNEEiLz4KICA8ZWxsaXBzZSBjeD0iMTUzIiBjeT0iMTEwIiByeD0iMTAiIHJ5PSIxMSIgZmlsbD0iI0YyRURFNiIvPgogIDxjaXJjbGUgY3g9IjE1MiIgY3k9IjExMSIgcj0iNSIgZmlsbD0iIzJBM0E0QSIvPgogIDxwYXRoIGQ9Ik0xMzAgMTM4Yy0xNC05LTMwLTYtMzYgNCAxMCAxMiAyNiAxMiAzNiAyIDEwIDEwIDI2IDEwIDM2LTItNi0xMC0yMi0xMy0zNi00eiIgZmlsbD0iIzZCNEEyQSIvPgogIDxwYXRoIGQ9Ik0xMDggMTUyYzEyIDE0IDMyIDE0IDQ0IDAtMTQgNi0zMCA2LTQ0IDB6IiBmaWxsPSIjQzQ3NDZCIi8+CiAgPHBhdGggZD0iTTg0IDkyYzAtMzAgMjAtNDYgNDYtNDZzNDYgMTYgNDYgNDZjLTI0LTEyLTY4LTEyLTkyIDB6IiBmaWxsPSIjQjk5NDYxIi8+CiAgPHBhdGggZD0iTTQwIDkyYzIyLTE0IDE1OC0xNCAxODAgMCA5IDYgNiAxNi02IDE2SDQ2Yy0xMiAwLTE1LTEwLTYtMTZ6IiBmaWxsPSIjQ0JBODcwIi8+CiAgPHBhdGggZD0iTTg2IDg0YzI2LTggNjItOCA4OCAwIiBzdHJva2U9IiM4QTZBM0UiIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0ibm9uZSIvPgo8L3N2Zz4=", "sbire": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNjAgMjYwIj4KICA8cmVjdCB3aWR0aD0iMjYwIiBoZWlnaHQ9IjI2MCIgZmlsbD0iIzE1MEQxMCIvPgogIDxwYXRoIGQ9Ik0yNiAyNjBjMC00NiA0NC03MiAxMDQtNzJzMTA0IDI2IDEwNCA3MnoiIGZpbGw9IiMxRTI1MzAiLz4KICA8cGF0aCBkPSJNMTA0IDE5MGg1MmwtOCA3MGgtMzZ6IiBmaWxsPSIjRENENkNDIi8+CiAgPHBhdGggZD0iTTEwNCAxOTBsMjYgMjIgMjYtMjItMTQtOGgtMjR6IiBmaWxsPSIjRUZFOURGIi8+CiAgPHBhdGggZD0iTTEzMCAyMTJsLTExIDEyIDExIDQyIDExLTQyeiIgZmlsbD0iIzhFMUExRSIvPgogIDxwYXRoIGQ9Ik0xMTkgMjAwaDIybC0xMSAxMnoiIGZpbGw9IiM2RTEyMTYiLz4KICA8cGF0aCBkPSJNMTA0IDE5MGwyNiAyMi0xNCA0OC0zMC01NnpNMTU2IDE5MGwtMjYgMjIgMTQgNDggMzAtNTZ6IiBmaWxsPSIjMkEzMzQxIi8+CiAgPHBhdGggZD0iTTExMiAxNjBoMzZ2MzRoLTM2eiIgZmlsbD0iI0M5OEY2NiIvPgogIDxlbGxpcHNlIGN4PSI3NiIgY3k9IjEyMiIgcng9IjEwIiByeT0iMTQiIGZpbGw9IiNFM0FDODEiLz4KICA8ZWxsaXBzZSBjeD0iMTg0IiBjeT0iMTIyIiByeD0iMTAiIHJ5PSIxNCIgZmlsbD0iI0UzQUM4MSIvPgogIDxwYXRoIGQ9Ik04MiA5NmMwLTMwIDIxLTUwIDQ4LTUwczQ4IDIwIDQ4IDUwdjIwYzAgNDAtMjEgNjYtNDggNjZzLTQ4LTI2LTQ4LTY2eiIgZmlsbD0iI0UzQUM4MSIvPgogIDxwYXRoIGQ9Ik05NiAxNTBjMTAgMjIgMjQgMzIgMzQgMzJzMjQtMTAgMzQtMzJjLTggMjYtMjAgNDAtMzQgNDBzLTI2LTE0LTM0LTQweiIgZmlsbD0iI0QxOUE3MCIvPgogIDxwYXRoIGQ9Ik03OCA5MmMyLTMyIDI0LTUwIDUyLTUwczUwIDE4IDUyIDUwYy0xMC0xNi0yNi0yNi01Mi0yNi0xNCAwLTMwIDQtNDIgMTQgNi0xMCAxNi0xOCAyOC0yMi0xNiAyLTMwIDEyLTM4IDM0eiIgZmlsbD0iIzE0MTgxRiIvPgogIDxwYXRoIGQ9Ik05MiA5NmMxNC0xMiAzMC0xMiA0MC0yLTEyLTQtMjYtMi00MCAyeiIgZmlsbD0iIzE0MTgxRiIvPgogIDxwYXRoIGQ9Ik0xMzAgODZjMTItMTAgMjgtOCAzOCA0LTE0LTYtMjYtOC0zOC00eiIgZmlsbD0iIzE0MTgxRiIvPgogIDxwYXRoIGQ9Ik05NiAxMTJjMTAtOCAyNC04IDMyIDAtMTAgNi0yMiA2LTMyIDB6IiBmaWxsPSIjRjJFREU2Ii8+CiAgPGNpcmNsZSBjeD0iMTEyIiBjeT0iMTEyIiByPSI1IiBmaWxsPSIjMUExRjI4Ii8+CiAgPHBhdGggZD0iTTEzMiAxMDhjMTAtOCAyNC04IDMyIDAtMTAgNi0yMiA2LTMyIDB6IiBmaWxsPSIjRjJFREU2Ii8+CiAgPGNpcmNsZSBjeD0iMTQ4IiBjeT0iMTA4IiByPSI1IiBmaWxsPSIjMUExRjI4Ii8+CiAgPHBhdGggZD0iTTEwNCAxNTJjMTYgMTAgMzQgOCA0OC02LTEyIDE0LTMyIDE2LTQ4IDZ6IiBmaWxsPSIjN0E0QTNDIi8+Cjwvc3ZnPg=="};
+const ROLES = {
+  loup:      {nom:"Loup",       equipe:"loup",    desc:"Chaque nuit, la meute désigne une victime. Vous gagnez dès que vous êtes aussi nombreux que les survivants."},
+  villageois:{nom:"Villageois", equipe:"village", desc:"Aucun pouvoir. Ton arme, c'est le débat et ton vote."},
+  chasseur:  {nom:"Chasseur",   equipe:"village", desc:"Si tu meurs — nuit ou vote — tu emportes quelqu'un avec toi."},
+  sorciere:  {nom:"Sorcière",   equipe:"village", desc:"Une seule résurrection pour toute la partie. Tu peux te sauver toi-même."},
+  sbire:     {nom:"Sbire",      equipe:"loup",    desc:"Tu connais la meute, elle ne te connaît pas. Tu gagnes avec elle."},
+  voyante:   {nom:"Voyante",    equipe:"village", desc:"Une carte du centre par nuit, trois en tout. Et une seule fois, tu perces le rôle d'un joueur."},
+  voleur:    {nom:"Voleur",     equipe:"village", desc:"Nuit 1 seulement : tu échanges ta carte contre une du centre, à l'aveugle."}
+};
+const ORDRE = ["loup","villageois","chasseur","sorciere","sbire","voyante","voleur"];
+const UNIQUES = ["chasseur","sorciere","sbire","voyante","voleur"];
+const CAPUCHE = '<svg viewBox="0 0 24 24"><path d="M12 3.4c2.3 0 4.1 1.9 4.1 4.2v1c0 2.1-1.9 3.7-4.1 3.7S7.9 10.7 7.9 8.6v-1c0-2.3 1.8-4.2 4.1-4.2z"/><path d="M3.6 21.2c0-4.3 3.9-6.9 8.4-6.9s8.4 2.6 8.4 6.9z"/></svg>';
+const S = {
+  enveloppe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="1.6"/><path d="M2.5 7 12 13.6 21.5 7"/></svg>',
+  scellee:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="1.6"/><path d="M2.5 7 12 13.6 21.5 7"/><circle cx="12" cy="13.2" r="3.6" fill="currentColor" stroke="none"/></svg>',
+  urne:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M17 32h46l-5.5 36a5 5 0 0 1-5 4.2H27.5a5 5 0 0 1-5-4.2z"/><rect x="13" y="23" width="54" height="9.5" rx="2.5"/><path d="M31 27.7h18" stroke-width="3.4"/><path d="M28 5h24v14H28z"/><path d="M28 5l12 8.6L52 5"/></svg>',
+  lune:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M52 8a30 30 0 1 0 20 44A32 32 0 0 1 52 8z"/><circle cx="20" cy="16" r="2" fill="currentColor"/><circle cx="66" cy="26" r="1.6" fill="currentColor"/><circle cx="12" cy="40" r="1.4" fill="currentColor"/></svg>',
+  soleil:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="40" cy="40" r="16"/><path d="M40 8v10M40 62v10M8 40h10M62 40h10M17 17l7 7M56 56l7 7M63 17l-7 7M24 56l-7 7"/></svg>',
+  oeil:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M6 40s13-19 34-19 34 19 34 19-13 19-34 19S6 40 6 40z"/><circle cx="40" cy="40" r="10"/><circle cx="40" cy="40" r="3.5" fill="currentColor"/></svg>',
+  sablier:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M22 8h36M22 72h36"/><path d="M26 8v10c0 9 14 15 14 22s-14 13-14 22v10M54 8v10c0 9-14 15-14 22s14 13 14 22v10"/><path d="M31 62c2-6 6-9 9-9s7 3 9 9z" fill="currentColor" stroke="none"/></svg>',
+  table:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><ellipse cx="40" cy="30" rx="30" ry="13"/><path d="M10 30v6c0 7 13 13 30 13s30-6 30-13v-6"/><path d="M20 47l-6 25M60 47l6 25"/></svg>',
+  main:'<svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M30 42V16a6 6 0 0 1 12 0v22"/><path d="M42 30a6 6 0 0 1 12 0v12"/><path d="M54 34a6 6 0 0 1 12 0v16c0 13-9 22-22 22s-22-8-22-20V34a6 6 0 0 1 10-4"/></svg>',
+  hp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
+  hpMuet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>'
+};
+const emb=(s,p)=>'<div class="embleme'+(p?" petit":"")+'">'+s+'</div>';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const melange=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const patience=t=>'<div class="attente"><span class="braise"></span>'+esc(t)+'</div>';
+
+$("#decor").innerHTML=(function(){
+  let t="";
+  for(let i=0;i<12;i++){
+    const x=i*9.6-4,w=3+(i%4)*1.3,h=52+(i%5)*11;
+    t+='<path d="M'+x+' 100 L'+x+' '+(100-h)+' L'+(x+w/2)+' '+(100-h-7)+' L'+(x+w)+' '+(100-h)+' L'+(x+w)+' 100 Z" fill="#0D0A0C"/>';
+  }
+  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs>'
+    +'<radialGradient id="g" cx="50%" cy="18%" r="62%"><stop offset="0%" stop-color="#2A1013"/>'
+    +'<stop offset="55%" stop-color="#120A0C"/><stop offset="100%" stop-color="#0A0709"/></radialGradient></defs>'
+    +'<rect width="100" height="100" fill="url(#g)"/><circle cx="50" cy="16" r="7" fill="#1D1216"/>'+t+'</svg>';
+})();
+
+/* ---------- état ---------- */
+let db=null, ME=null, CODE=null, MODE=null;
+let META=null, ETAT=null, JOUEURS={}, ACTIONS={}, MONROLE=null;
+let ROLESALL={}, PRIVE={}, DEMANDES={}, VOTES={};
+let PRET=false, ERREUR=null, VOIX=true, derniereCle=null, chronoTimer=null;
+let brouillonCompo=null, vuePanneau={}, abonnements=[], enTraitement=false;
+
+try{ MODE=localStorage.getItem("lg_mode"); CODE=localStorage.getItem("lg_code"); VOIX=localStorage.getItem("lg_voix")!=="0"; }catch(e){}
+const garder=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
+
+const R = p => db.ref("salons/"+CODE+(p?"/"+p:""));
+const estTable = () => MODE==="table";
+const ordre = () => (ETAT&&ETAT.ordre)||[];
+const estVivant = u => !!(ETAT&&ETAT.vivants&&ETAT.vivants[u]);
+const vivants = () => ordre().filter(estVivant);
+const nomDe = u => (JOUEURS[u]&&JOUEURS[u].nom)||"?";
+const aAgi = u => ACTIONS[u] && ACTIONS[u].n===(ETAT?ETAT.nuit:-1);
+const toutesActions = () => vivants().length>0 && vivants().every(u=>aAgi(u));
+const tourVote = () => (ETAT?ETAT.nuit:0)+"-"+(ETAT&&ETAT.revote?"2":"1");
+const aVote = u => VOTES[u] && VOTES[u].t===tourVote();
+const monRole = () => MONROLE && MONROLE.role;
+
+/* ---------- narration ---------- */
+function narrer(texte,cle){
+  if(!estTable()||!VOIX||!texte) return;
+  if(cle){ if(cle===derniereCle) return; derniereCle=cle; }
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(texte);
+    u.lang="fr-FR"; u.rate=.86; u.pitch=.6;
+    const v=speechSynthesis.getVoices().filter(x=>/^fr/i.test(x.lang))[0];
+    if(v) u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+const taire=()=>{ try{speechSynthesis.cancel();}catch(e){} };
+
+/* ---------- morceaux ---------- */
+function carteRole(role,titre){
+  const Rr=ROLES[role]; if(!Rr) return "";
+  return '<div class="role-carte"><img class="role-img" src="'+IMG[role]+'" alt="'+esc(Rr.nom)+'">'
+    +'<span class="equipe">'+esc(titre||(Rr.equipe==="loup"?"Camp du Loup":"Camp du village"))+'</span>'
+    +'<div class="role-nom">'+esc(Rr.nom)+'</div></div>';
+}
+function carteRoleDesc(role){
+  const Rr=ROLES[role]; if(!Rr) return "";
+  return '<div class="role-carte"><img class="role-img" src="'+IMG[role]+'" alt="'+esc(Rr.nom)+'">'
+    +'<span class="equipe">'+(Rr.equipe==="loup"?"Camp du Loup":"Camp du village")+'</span>'
+    +'<div class="role-nom">'+esc(Rr.nom)+'</div><p class="doux">'+esc(Rr.desc)+'</p></div>';
+}
+function barre(){
+  const bar=$("#profils");
+  const montrer=estTable()&&ordre().length&&ETAT&&!["salon","compo"].includes(ETAT.phase);
+  bar.style.display=montrer?"flex":"none";
+  if(!montrer){ document.body.style.paddingBottom="60px"; return; }
+  const rev=(ETAT&&ETAT.revele)||{};
+  bar.innerHTML=ordre().map(u=>{
+    const mort=!estVivant(u), r=rev[u];
+    return '<div class="profil '+(mort?"mort":"")+'"><div class="rond">'
+      +(mort&&r?'<img src="'+IMG[r]+'" alt="">':CAPUCHE)+'</div>'
+      +'<div class="p-nom">'+esc(nomDe(u))+'</div>'
+      +'<div class="p-role">'+(mort&&r?esc(ROLES[r].nom):"&nbsp;")+'</div></div>';
+  }).join("");
+  requestAnimationFrame(()=>{ document.body.style.paddingBottom=(bar.offsetHeight+22)+"px"; });
+}
+function majSon(){
+  const b=$("#son");
+  b.style.display=estTable()?"flex":"none";
+  b.classList.toggle("muet",!VOIX);
+  b.innerHTML=VOIX?S.hp:S.hpMuet;
+}
+
+/* ---------- rendu ---------- */
+function rendre(){
+  let html;
+  if(ERREUR) html=vErreur();
+  else if(!PRET) html=vChargement();
+  else if(!MODE||!CODE) html=vAccueil();
+  else if(estTable()) html=vTable();
+  else html=vJoueur();
+  $("#app").innerHTML=html;
+  brancher(); barre(); majSon();
+  if(estTable()) narrerPhase();
+  calerChrono();
+}
+const vChargement=()=>'<span class="eyebrow">Le jeu du Loup-Garou</span><h1>On réveille le village…</h1>'+patience("connexion");
+const vErreur=()=>'<span class="eyebrow">Le jeu du Loup-Garou</span><h1>Ça coince</h1>'
+  +'<div class="carte"><p class="grand">'+esc(ERREUR)+'</p></div>'
+  +'<div class="liste"><button id="reessayer">Recharger</button><button id="oublier">Quitter ce salon</button></div>';
+
+function vAccueil(){
+  return emb(S.table)+'<span class="eyebrow">Le jeu du Loup-Garou</span><h1>Un village,<br>plusieurs téléphones</h1>'
+    +'<p class="doux grand">Un appareil tient la table : il reste au centre, il annonce et il parle. Chacun des autres garde ses secrets sur le sien.</p>'
+    +'<div class="liste"><button class="primaire" id="creer">Ouvrir une table</button></div>'
+    +'<hr><h3>Rejoindre une table</h3>'
+    +'<p class="doux">Tape le code à quatre lettres affiché sur le téléphone du centre.</p>'
+    +'<input type="text" id="code-salon" class="codeinput" placeholder="CODE" maxlength="4" autocomplete="off" autocapitalize="characters">'
+    +'<div class="liste"><button id="rejoindre">Rejoindre</button></div>'
+    +'<div id="err" class="avis" style="display:none">Ce salon n\'existe pas. Vérifie les quatre lettres.</div>';
+}
+
+/* ===== TABLE ===== */
+function vTable(){
+  const p=ETAT?ETAT.phase:null;
+  if(!ETAT||p==="salon") return vSalonTable();
+  if(p==="compo") return vCompo();
+  if(p==="distribution") return vDistribTable();
+  if(p==="nuit") return vNuitTable();
+  if(p==="matin") return vMatinTable();
+  if(p==="chasseur") return vChasseurTable();
+  if(p==="tir") return vTirTable();
+  if(p==="ultime") return vUltimeTable();
+  if(p==="debat") return vDebatTable();
+  if(p==="vote") return vVoteTable();
+  if(p==="resultat") return vResultatTable();
+  if(p==="fin") return vFinTable();
+  return vSalonTable();
+}
+function vSalonTable(){
+  const l=Object.keys(JOUEURS), n=l.length;
+  return '<span class="eyebrow">Table · en préparation</span><h2>Code de la table</h2>'
+    +'<div class="code">'+esc(CODE)+'</div>'
+    +'<p class="doux centre">Chacun ouvre la page sur son téléphone et tape ce code.</p>'
+    +'<div class="carte"><h3>À table</h3>'
+    +(n?'<div class="prenom-mid">'+l.map(u=>esc(nomDe(u))).join("  ·  ")+'</div>'
+       :'<p class="doux">Personne encore.</p>')
+    +'<p class="doux tag" style="margin-bottom:0">'+n+' joueur'+(n>1?"s":"")+' · minimum 5, maximum 12</p></div>'
+    +'<div class="liste"><button class="primaire" id="vers-compo" '+((n<5||n>12)?"disabled":"")+'>Choisir les rôles</button>'
+    +'<button id="vider">Vider la table</button></div>';
+}
+function vCompo(){
+  const l=Object.keys(JOUEURS), n=l.length, besoin=n+3;
+  const c=brouillonCompo||(brouillonCompo=defautCompo(n));
+  const total=totalCompo(c), ecart=besoin-total;
+  const ligne=(r,min,max)=>{
+    const v=c[r]||0;
+    return '<div class="compo-ligne"><div class="compo-vignette"><img src="'+IMG[r]+'" alt=""></div>'
+      +'<div class="compo-txt"><b>'+esc(ROLES[r].nom)+(r==="loup"&&v>1?"s":"")+'</b><span>'
+      +(r==="loup"?"1 à 3 · au moins un est toujours en jeu":r==="villageois"?"autant que tu veux":"présent ou absent")
+      +'</span></div><div class="compteur"><button data-moins="'+r+'" '+(v<=min?"disabled":"")+'>−</button>'
+      +'<span class="val">'+v+'</span><button data-plus="'+r+'" '+(max!==null&&v>=max?"disabled":"")+'>+</button></div></div>';
+  };
+  return '<span class="eyebrow">Table · composition</span><h2>Quels rôles en jeu ?</h2>'
+    +'<p class="doux">'+n+' joueurs, plus 3 cartes au centre : il faut <b style="color:var(--blanc)">'+besoin+' cartes</b>.</p>'
+    +ligne("loup",1,3)+ligne("villageois",0,null)+UNIQUES.map(r=>ligne(r,0,1)).join("")
+    +'<div class="bilan">'+(ecart===0?'<b>Composition complète</b>'
+      :ecart>0?'<b>Il manque '+ecart+' carte'+(ecart>1?"s":"")+'</b><br><span class="doux">'+total+' sur '+besoin+'</span>'
+      :'<b>'+(-ecart)+' carte'+(-ecart>1?"s":"")+' en trop</b><br><span class="doux">'+total+' sur '+besoin+'</span>')+'</div>'
+    +'<div class="liste">'+(ecart!==0?'<button id="auto-compo">Ajuster avec des villageois</button>':'')
+    +'<button class="primaire" id="distribuer" '+(ecart!==0?"disabled":"")+'>Distribuer les rôles</button>'
+    +'<button id="retour-salon">Revenir</button></div>';
+}
+function vDistribTable(){
+  const n=ordre().length, vus=ordre().filter(aAgi).length;
+  return '<span class="eyebrow">Table · remise des rôles</span><h2>Chacun regarde sa carte</h2>'
+    +'<div class="carte"><div class="prenom-mid">'+vus+' sur '+n+'</div><p class="doux" style="margin-bottom:0">ont vu leur rôle.</p></div>'
+    +'<div class="liste"><button class="primaire" id="vers-nuit" '+(vus<n?"disabled":"")+'>Éteindre les lumières</button></div>'
+    +(vus<n?patience("en attente des derniers"):"");
+}
+function vNuitTable(){
+  return emb(S.lune)+'<span class="eyebrow">Table · nuit '+ETAT.nuit+'</span><h2>Le village dort</h2>'
+    +'<p class="doux grand">Personne ne parle. Ceux qui ont un pouvoir agissent sur leur téléphone.</p>'
+    +(toutesActions()?'<div class="liste"><button class="primaire" id="lever-jour">Lever le jour</button></div>'
+                     :patience("la nuit suit son cours"));
+}
+function annonceMatin(){
+  const v=ETAT.victime;
+  if(ETAT.sauvee) return '<h2>Personne n\'est mort cette nuit</h2><div class="prenom">'+esc(nomDe(v))+'</div>'
+    +'<p class="grand">a été choisi par la meute, mais la Sorcière l\'a ranimé.</p>'
+    +'<div class="carte"><p class="doux" style="margin:0">Son rôle reste secret. La fiole est vide pour le reste de la partie.</p></div>';
+  if(!v) return '<h2>Nuit calme</h2><p class="grand doux">Personne n\'a été désigné.</p>';
+  return '<h2>La meute a frappé</h2><div class="prenom">'+esc(nomDe(v))+'</div>'
+    +'<p class="doux">n\'a pas vu l\'aube. Sa carte :</p>'+carteRole((ETAT.revele||{})[v],"Sa carte");
+}
+const vMatinTable=()=>emb(S.soleil)+'<span class="eyebrow">Table · jour '+ETAT.nuit+'</span>'+annonceMatin()
+  +'<div class="liste"><button class="primaire" id="apres-matin">Continuer</button></div>';
+const vChasseurTable=()=>emb(S.main)+'<span class="eyebrow">Table · dernier souffle</span><h2>Le Chasseur lève son fusil</h2>'
+  +'<div class="prenom">'+esc(nomDe(ETAT.chasseurUid))+'</div>'
+  +'<p class="grand doux">Il choisit sur son téléphone qui il emporte.</p>'+patience("il met en joue");
+const vTirTable=()=>emb(S.main)+'<span class="eyebrow">Table · le coup part</span><h2>Abattu par le Chasseur</h2>'
+  +'<div class="prenom">'+esc(nomDe(ETAT.tire))+'</div>'+carteRole((ETAT.revele||{})[ETAT.tire],"Sa carte")
+  +'<div class="liste"><button class="primaire" id="apres-tir">Continuer</button></div>';
+function vUltimeTable(){
+  const v=vivants();
+  return emb(S.soleil)+'<span class="eyebrow">Table · dernier jour</span><h2>Le village ne se rendort pas</h2>'
+    +'<div class="prenom-mid" style="margin:12px 0">'+v.map(u=>esc(nomDe(u))).join("  ·  ")+'</div>'
+    +'<div class="carte"><p class="doux" style="margin:0">Vous n\'êtes plus que '+v.length+'. Si la nuit tombait, le camp des loups égalerait le village : la partie serait pliée sans que personne puisse rien y faire.</p></div>'
+    +'<p class="grand">Ce vote est votre dernière chance.</p>'
+    +'<div class="liste"><button class="primaire" id="ouvrir-ultime">Ouvrir le dernier débat</button></div>';
+}
+function texteChrono(){
+  const r=Math.max(0,Math.ceil(((ETAT&&ETAT.chronoFin||0)-Date.now())/1000));
+  return Math.floor(r/60)+":"+String(r%60).padStart(2,"0");
+}
+function vDebatTable(){
+  const tete=ETAT.revote
+    ?'<span class="eyebrow">Table · départage</span><h2>Deux noms sur la sellette</h2>'
+      +'<div class="prenom-mid" style="margin:10px 0">'+(ETAT.exaequo||[]).map(u=>esc(nomDe(u))).join("  ·  ")+'</div>'
+    :'<span class="eyebrow">Table · jour '+ETAT.nuit+'</span><h2>À vous de parler</h2>';
+  return emb(S.sablier,1)+tete+'<div class="chrono" id="chrono">'+texteChrono()+'</div>'
+    +'<div class="liste"><button class="primaire" id="aller-vote">'+(ETAT.revote?"Passer au second vote":"Passer au vote")+'</button></div>';
+}
+function vVoteTable(){
+  const n=vivants().length, v=vivants().filter(aVote).length;
+  return emb(S.enveloppe)+'<span class="eyebrow">Table · '+(ETAT.revote?"second tour":"vote anonyme")+'</span><h2>L\'urne est ouverte</h2>'
+    +'<p class="doux grand">Chacun glisse son bulletin sur son téléphone. La table ne voit que le nombre.</p>'
+    +'<div class="carte"><div class="prenom-mid">'+v+' sur '+n+'</div><p class="doux" style="margin-bottom:0">bulletins déposés.</p></div>'
+    +'<div class="liste"><button class="primaire" id="depouiller" '+(v<n?"disabled":"")+'>Ouvrir l\'urne</button></div>';
+}
+function vResultatTable(){
+  const r=ETAT.resultat||{}, compte=r.compte||[];
+  const total=compte.reduce((s,c)=>s+c.n,0)||1;
+  const barres=compte.map(c=>'<div><div class="barre-nom"><b>'+esc(nomDe(c.uid))+'</b><span class="tag">'+c.n+' voix</span></div>'
+    +'<div class="barre-fond"><span style="width:'+((c.n/total)*100)+'%"></span></div></div>').join("");
+  if(r.egalite) return emb(S.urne)+'<span class="eyebrow">Table · dépouillement</span><h2>Égalité</h2>'
+    +'<div class="barres">'+barres+'</div>'
+    +(r.definitif?'<p class="grand doux">Deuxième égalité : personne ne meurt aujourd\'hui.</p>'
+        +'<div class="liste"><button class="primaire" id="apres-vote">La nuit tombe</button></div>'
+      :'<p class="grand doux">Cinq nouvelles minutes pour départager.</p>'
+        +'<div class="liste"><button class="primaire" id="revoter">Lancer le départage</button></div>');
+  return emb(S.urne)+'<span class="eyebrow">Table · dépouillement</span><h2>Le village a tranché</h2>'
+    +'<div class="prenom">'+esc(nomDe(r.elu))+'</div><p class="doux">est éliminé. Sa carte :</p>'
+    +carteRole((ETAT.revele||{})[r.elu],"Sa carte")+'<div class="barres">'+barres+'</div>'
+    +'<div class="liste"><button class="primaire" id="apres-vote">Continuer</button></div>';
+}
+function vFinTable(){
+  const village=ETAT.fin==="village", rev=ETAT.revele||{};
+  const gagnants=ordre().filter(u=>rev[u]&&(ROLES[rev[u]].equipe==="village")===village);
+  const nbL=ordre().filter(u=>rev[u]==="loup").length;
+  return '<span class="eyebrow">Table · fin de partie</span>'
+    +'<h1>'+(village?"Le village a eu leur peau.":(nbL>1?"Les Loups ont dévoré le village.":"Le Loup a dévoré le village."))+'</h1>'
+    +'<div class="carte"><h3>'+(village?"Camp du village":"Camp du Loup")+'</h3>'
+    +'<div class="prenom-mid">'+gagnants.map(u=>esc(nomDe(u))).join("  ·  ")+'</div></div>'
+    +'<hr><span class="eyebrow">Toutes les cartes</span><div class="liste">'
+    +ordre().map(u=>'<div class="nom carte" style="margin:0"><b>'+esc(nomDe(u))+'</b><span class="tag">'+esc(rev[u]?ROLES[rev[u]].nom:"?")+'</span></div>').join("")+'</div>'
+    +'<p class="doux">Au centre : '+((ETAT.centreRevele||[]).map(c=>esc(ROLES[c].nom)).join(", ")||"—")+'.</p>'
+    +'<div class="liste"><button class="primaire" id="rejouer">Nouvelle partie</button></div>';
+}
+
+/* ===== JOUEUR ===== */
+function vJoueur(){
+  const p=ETAT?ETAT.phase:null, inscrit=!!JOUEURS[ME];
+  if(!ETAT||p==="salon"||p==="compo"){
+    if(!inscrit) return vSasseoir();
+    return '<span class="eyebrow">Table '+esc(CODE)+'</span><h2>'+esc(nomDe(ME))+', assis</h2>'
+      +'<p class="doux grand">Regarde le téléphone au centre. La partie commence quand l\'organisateur distribue les rôles.</p>'
+      +'<div class="carte"><h3>Autour de la table</h3><div class="prenom-mid">'
+      +Object.keys(JOUEURS).map(u=>esc(nomDe(u))).join("  ·  ")+'</div></div>'
+      +'<div class="liste"><button id="quitter-siege">Ce n\'est pas mon prénom</button></div>';
+  }
+  if(ordre().indexOf(ME)<0) return '<span class="eyebrow">Spectateur</span><h2>Tu n\'es pas dans cette partie</h2>'
+    +'<p class="doux grand">Elle a commencé sans toi. Regarde la table, et assieds-toi à la prochaine.</p>';
+  if(!monRole()) return patience("réception de ta carte");
+  if(p==="distribution") return vMaCarte();
+  if(p==="nuit") return vMaNuit();
+  if(p==="chasseur") return vMonTir();
+  if(p==="vote") return vMonBulletin();
+  if(p==="debat") return vMonDebat();
+  if(p==="fin") return vFinJoueur();
+  return vSuivreTable();
+}
+function vSasseoir(){
+  return '<span class="eyebrow">Table '+esc(CODE)+'</span><h1>Prends place</h1>'
+    +'<p class="doux grand">Écris ton prénom. Il apparaîtra sur le téléphone de la table.</p>'
+    +'<input type="text" id="mon-nom" placeholder="Ton prénom" autocomplete="off" maxlength="18">'
+    +'<div class="liste"><button class="primaire" id="s-asseoir">M\'asseoir</button>'
+    +'<button id="oublier">Changer de table</button></div>'
+    +'<div id="err" class="avis" style="display:none">Choisis un prénom que personne n\'a déjà pris.</div>';
+}
+function vMaCarte(){
+  if(aAgi(ME)) return '<span class="eyebrow">Ta carte est connue</span><h2>Garde-la pour toi</h2>'
+    +'<p class="grand doux">Range ton téléphone et regarde la table.</p>'+patience("en attente des autres");
+  return '<span class="eyebrow">Ton rôle</span><div class="prenom">'+esc(nomDe(ME))+'</div>'
+    +carteRoleDesc(monRole())
+    +(MONROLE.meute?'<div class="carte"><span class="equipe">Ta meute</span><div class="prenom-mid">'
+      +MONROLE.meute.map(u=>esc(nomDe(u))).join("  ·  ")+'</div></div>':'')
+    +'<div class="avis">Personne d\'autre ne doit voir cet écran.</div>'
+    +'<div class="liste"><button class="primaire" id="carte-vue">J\'ai vu ma carte</button></div>';
+}
+function vMaNuit(){
+  if(!estVivant(ME)) return emb(S.lune)+'<span class="eyebrow">Nuit '+ETAT.nuit+'</span><h2>Tu es mort</h2>'
+    +'<p class="grand doux">Tu ne joues plus, mais tu peux regarder. Ne dis rien.</p>';
+  const r=monRole(), rev=MONROLE.revelation;
+  if(rev) return panRevelation(rev);
+  if(r==="voleur"&&ETAT.nuit===1&&!aAgi(ME)) return panVoleur();
+  if(r==="loup") return panLoup();
+  if(r==="sorciere") return panSorciere();
+  if(r==="voyante") return panVoyante();
+  if(r==="sbire"&&ETAT.nuit===1&&!aAgi(ME)) return panSbire();
+  if(!aAgi(ME)) marquerAction();
+  return emb(S.lune)+'<span class="eyebrow">Nuit '+ETAT.nuit+'</span><h2>Tu dors</h2>'
+    +'<p class="grand doux">Rien à faire cette nuit. La table te réveillera.</p>';
+}
+function panRevelation(rev){
+  if(rev.type==="devenu") return emb(S.lune)+'<span class="eyebrow">Échange fait</span><h2>Tu es désormais…</h2>'
+    +carteRoleDesc(rev.role)+'<p class="doux">Ta carte Voleur est partie au centre.</p>'
+    +'<div class="liste"><button class="primaire" id="fin-action">C\'est noté</button></div>';
+  if(rev.type==="joueur") return emb(S.oeil)+'<span class="eyebrow">Tu perces son masque</span><h2>Son vrai rôle</h2>'
+    +'<div class="prenom">'+esc(rev.nom)+'</div>'+carteRole(rev.role,"Sa carte")
+    +'<p class="doux centre">Tu ne pourras plus sonder personne.</p>'
+    +'<div class="liste"><button class="primaire" id="fin-action">C\'est noté</button></div>';
+  return emb(S.oeil)+'<span class="eyebrow">Carte '+"ABC"[rev.k]+' du centre</span><h2>Ce rôle n\'est pas en jeu</h2>'
+    +carteRole(rev.role,"Écartée du jeu")
+    +'<p class="doux centre">Il te reste '+(3-(rev.faits||0))+' regard'+((3-(rev.faits||0))>1?"s":"")+' sur le centre.</p>'
+    +'<div class="liste"><button class="primaire" id="fin-action">C\'est noté</button></div>';
+}
+function panVoleur(){
+  return emb(S.lune)+'<span class="eyebrow">Voleur</span><h2>Une carte, à l\'aveugle</h2>'
+    +'<p class="doux">Tu prends une des trois cartes du centre et tu y laisses la tienne. Aucun retour en arrière.</p>'
+    +'<div class="liste">'+[0,1,2].map(k=>'<button class="nom" data-vol="'+k+'"><b>Carte '+"ABC"[k]+'</b><span class="tag">prendre</span></button>').join("")
+    +'<button id="passer-nuit">Ne pas échanger</button></div>';
+}
+function panLoup(){
+  const vue=MONROLE.vue||{}, freres=(MONROLE.meute||[]).filter(u=>u!==ME&&estVivant(u));
+  const bande=freres.length?'<div class="carte"><span class="equipe">Ta meute</span><div class="prenom-mid">'
+    +freres.map(u=>esc(nomDe(u))).join("  ·  ")+'</div><p class="doux" style="margin:8px 0 0">Le dernier choix enregistré est celui qui compte.</p></div>':"";
+  if(vue.cible&&aAgi(ME)) return emb(S.lune)+'<span class="eyebrow">Votre proie</span><h2>Elle ne verra pas l\'aube</h2>'
+    +'<div class="prenom">'+esc(nomDe(vue.cible))+'</div>'
+    +'<p class="grand doux">Sauf si la fiole de la Sorcière passe par là.</p>'+bande
+    +'<div class="liste"><button id="changer-proie">Changer de proie</button></div>';
+  return emb(S.lune)+'<span class="eyebrow">'+((MONROLE.meute||[]).length>1?"Meute":"Loup")+'</span><h2>Qui meurt cette nuit ?</h2>'+bande
+    +(vue.cible?'<div class="avis">Ta meute a déjà désigné '+esc(nomDe(vue.cible))+'. Touche un autre nom pour changer.</div>':'')
+    +'<div class="liste">'+vivants().filter(u=>(MONROLE.meute||[]).indexOf(u)<0).map(u=>
+      '<button class="nom danger" data-proie="'+esc(u)+'"><b>'+esc(nomDe(u))+'</b><span class="tag">'+(vue.cible===u?"choisie":"dévorer")+'</span></button>').join("")+'</div>';
+}
+function panSorciere(){
+  const vue=MONROLE.vue||{};
+  if(aAgi(ME)) return emb(S.lune)+'<span class="eyebrow">C\'est fait</span><h2>'+(vue.versee?"Fiole versée":"Tu la laisses partir")+'</h2>'
+    +'<p class="grand doux">'+(vue.versee?"Ta fiole est vide pour le reste de la partie.":"Tu gardes ta fiole pour une autre nuit.")+'</p>';
+  if(!vue.cible) return emb(S.lune)+'<span class="eyebrow">Sorcière</span><h2>La meute n\'a pas choisi</h2>'
+    +'<p class="grand doux">Attends. Dès qu\'une victime est désignée, son nom s\'affichera ici.</p>'+patience("la meute délibère");
+  if(!vue.potion){ if(!aAgi(ME)) marquerAction();
+    return emb(S.lune)+'<span class="eyebrow">Sorcière</span><h2>La meute a choisi</h2>'
+      +'<div class="prenom">'+esc(nomDe(vue.cible))+'</div><p class="grand doux">Ta fiole est vide. Tu ne peux que regarder.</p>'; }
+  return emb(S.lune)+'<span class="eyebrow">Sorcière</span><h2>La meute a choisi</h2>'
+    +'<div class="prenom">'+esc(nomDe(vue.cible))+'</div><p class="doux">Une seule résurrection pour toute la partie.</p>'
+    +'<div class="liste"><button class="primaire" data-fiole="1">Verser la fiole</button><button data-fiole="0">Laisser mourir</button></div>';
+}
+function panVoyante(){
+  const vue=MONROLE.vue||{}, faits=vue.regards||0, peutSonder=vue.sondage!==false;
+  if(aAgi(ME)) return emb(S.oeil)+'<span class="eyebrow">Nuit '+ETAT.nuit+'</span><h2>Tu as vu ce que tu voulais</h2>'
+    +'<p class="grand doux">Garde-le pour toi jusqu\'au jour.</p>';
+  if(vuePanneau.sonde) return emb(S.oeil)+'<span class="eyebrow">Sondage · une seule fois</span><h2>Qui veux-tu percer ?</h2>'
+    +'<p class="doux">Tu verras son rôle exact. Ce pouvoir ne revient jamais.</p>'
+    +'<div class="liste">'+vivants().filter(u=>u!==ME).map(u=>
+      '<button class="nom" data-sonde="'+esc(u)+'"><b>'+esc(nomDe(u))+'</b><span class="tag">sonder</span></button>').join("")
+    +'<button id="retour-voyante">Revenir</button></div>';
+  const resteCartes=faits<3;
+  if(!resteCartes&&!peutSonder){ if(!aAgi(ME)) marquerAction();
+    return emb(S.oeil)+'<h2>Tes dons sont épuisés</h2><p class="grand doux">Il ne te reste que ton jugement.</p>'; }
+  const vues=vue.vues||{};
+  return emb(S.oeil)+'<span class="eyebrow">Voyante</span><h2>Que veux-tu voir ?</h2>'
+    +(resteCartes?'<p class="doux">Une carte du centre — un rôle écarté du jeu. Regard '+(faits+1)+' sur 3.</p>'
+      +'<div class="liste">'+[0,1,2].map(k=>'<button class="nom" data-oeil="'+k+'" '+(vues[k]?"disabled":"")+'><b>Carte '+"ABC"[k]
+        +'</b><span class="tag '+(vues[k]?"ok":"")+'">'+(vues[k]?"déjà vue":"regarder")+'</span></button>').join("")+'</div>':'')
+    +(peutSonder?'<hr><p class="doux">Ou tu perces le rôle d\'un joueur vivant. Une seule fois dans toute la partie.</p>'
+      +'<div class="liste"><button class="primaire" id="menu-sonde">Sonder un joueur</button></div>':'')
+    +'<div class="liste"><button id="passer-nuit">Passer la nuit</button></div>';
+}
+function panSbire(){
+  const m=MONROLE.meute||[];
+  return emb(S.lune)+'<span class="eyebrow">Sbire</span><h2>'+(m.length>1?"Voici la meute":"Le Loup, c\'est…")+'</h2>'
+    +'<div class="prenom">'+m.map(u=>esc(nomDe(u))).join("<br>")+'</div>'
+    +'<p class="grand doux">'+(m.length>1?"Ils ignorent":"Il ignore")+' totalement qui tu es. Tu gagnes avec '+(m.length>1?"eux":"lui")+'.</p>'
+    +'<div class="liste"><button class="primaire" id="fin-action">C\'est noté</button></div>';
+}
+function vMonTir(){
+  if(ETAT.chasseurUid!==ME) return vSuivreTable();
+  return emb(S.main)+'<span class="eyebrow">Dernier souffle</span><h2>Tu emportes quelqu\'un</h2>'
+    +'<div class="liste">'+vivants().map(u=>'<button class="nom danger" data-tir="'+esc(u)+'"><b>'+esc(nomDe(u))+'</b><span class="tag">tirer</span></button>').join("")+'</div>';
+}
+function vMonBulletin(){
+  if(!estVivant(ME)) return vSuivreTable();
+  if(vuePanneau.vote) return emb(S.scellee)+'<span class="eyebrow">Bulletin scellé</span><h2>C\'est dans l\'urne</h2>'
+    +'<p class="grand doux">Ton vote est enregistré. La table n\'annoncera que le total.</p>';
+  const cibles=vivants().filter(u=>!ETAT.revote||(ETAT.exaequo||[]).indexOf(u)>=0);
+  return emb(S.enveloppe)+'<span class="eyebrow">'+(ETAT.revote?"Second tour":"Vote anonyme")+'</span><h2>Qui est le Loup ?</h2>'
+    +'<div class="liste">'+cibles.map(u=>'<button class="nom" data-vote="'+esc(u)+'"><b>'+esc(nomDe(u))+'</b><span class="tag">choisir</span></button>').join("")+'</div>';
+}
+const vMonDebat=()=>emb(S.sablier,1)+'<span class="eyebrow">'+(ETAT.revote?"Départage":"Débat")+'</span><h2>Parlez-vous</h2>'
+  +'<div class="chrono" id="chrono">'+texteChrono()+'</div><p class="doux centre">La table reprendra la main pour le vote.</p>';
+function vFinJoueur(){
+  const village=ETAT.fin==="village", r=monRole();
+  const gagne=(ROLES[r].equipe==="village")===village;
+  return '<span class="eyebrow">Fin de partie</span><h1>'+(gagne?"Tu l\'emportes.":"Tu as perdu.")+'</h1>'
+    +carteRole(r,"Ta carte")+'<p class="grand doux">Les détails sont sur le téléphone de la table.</p>';
+}
+function vSuivreTable(){
+  const p=ETAT.phase, rev=ETAT.revele||{};
+  let t="Regarde la table", s="Le téléphone du centre mène la partie.";
+  if(p==="matin"){ t=ETAT.sauvee?"Personne n'est mort":"La meute a frappé";
+    s=ETAT.victime?(ETAT.sauvee?nomDe(ETAT.victime)+" a été ranimé par la Sorcière.":nomDe(ETAT.victime)+" n'a pas vu l'aube. Sa carte : "+(rev[ETAT.victime]?ROLES[rev[ETAT.victime]].nom:"?")+"."):""; }
+  else if(p==="tir"){ t="Le Chasseur a tiré"; s=nomDe(ETAT.tire)+" tombe. Sa carte : "+(rev[ETAT.tire]?ROLES[rev[ETAT.tire]].nom:"?")+"."; }
+  else if(p==="chasseur"){ t="Le Chasseur met en joue"; s="Il choisit sur son propre téléphone."; }
+  else if(p==="resultat"){ const r=ETAT.resultat||{};
+    if(r.egalite){ t="Égalité"; s=r.definitif?"Personne ne meurt aujourd'hui.":"Le village n'a pas tranché."; }
+    else { t="Le village a tranché"; s=nomDe(r.elu)+" est éliminé. Sa carte : "+(rev[r.elu]?ROLES[rev[r.elu]].nom:"?")+"."; } }
+  else if(p==="ultime"){ t="Dernier jour"; s="Le village ne se rendort pas. Ce vote décide de tout."; }
+  else if(p==="vote"){ t="L'urne passe"; s="Attends ton tour, ou regarde la table."; }
+  return '<span class="eyebrow">'+(estVivant(ME)?"Tu es en vie":"Tu es mort")+'</span><h2>'+esc(t)+'</h2>'
+    +'<p class="grand doux">'+esc(s)+'</p>';
+}
+
+/* ---------- narration par phase ---------- */
+function narrerPhase(){
+  if(!ETAT) return;
+  const p=ETAT.phase, rev=ETAT.revele||{};
+  if(p==="distribution") return narrer("Les rôles sont distribués. Que chacun découvre sa carte sur son téléphone, sans la montrer.","dist");
+  if(p==="nuit") return narrer("La nuit tombe sur le village. Fermez les yeux. Ceux qui ont un pouvoir agissent en silence.","nuit"+ETAT.nuit);
+  if(p==="matin") return narrer(ETAT.sauvee
+    ?"Le jour se lève. Cette nuit, "+nomDe(ETAT.victime)+" a été désigné. Mais la Sorcière a versé sa fiole et l'a ramené parmi vous. Personne n'est mort."
+    :"Le jour se lève. "+nomDe(ETAT.victime)+" n'a pas vu l'aube. Sa carte était "+(rev[ETAT.victime]?ROLES[rev[ETAT.victime]].nom:"inconnue")+".","matin"+ETAT.nuit);
+  if(p==="chasseur") return narrer(nomDe(ETAT.chasseurUid)+" s'effondre. Mais sa main trouve son fusil. Il ne partira pas seul.","chas"+ETAT.nuit);
+  if(p==="tir") return narrer("Le coup part. "+nomDe(ETAT.tire)+" tombe. Sa carte était "+(rev[ETAT.tire]?ROLES[rev[ETAT.tire]].nom:"inconnue")+".","tir"+ETAT.nuit+ETAT.tire);
+  if(p==="ultime") return narrer("Le village ne se rendort pas. Vous n'êtes plus que "+vivants().length+". Ce vote est votre dernière chance.","ult"+ETAT.nuit);
+  if(p==="debat") return narrer(ETAT.revote?"Départage. Cinq minutes pour choisir entre eux deux.":"Le débat est ouvert. Cinq minutes. Regardez-vous bien.","deb"+tourVote());
+  if(p==="vote") return narrer("L'urne passe. Que chacun glisse son bulletin, en silence.","vot"+tourVote());
+  if(p==="resultat"){ const r=ETAT.resultat||{};
+    if(r.egalite) return narrer(r.definitif?"Égalité, une seconde fois. Personne ne mourra aujourd'hui.":"Égalité. Le village n'a pas tranché.","res"+tourVote());
+    return narrer("Le village a tranché. "+nomDe(r.elu)+" est éliminé. Sa carte était "+(rev[r.elu]?ROLES[rev[r.elu]].nom:"inconnue")+".","res"+tourVote()+r.elu); }
+  if(p==="fin") return narrer(ETAT.fin==="village"?"Le village a eu leur peau. La nuit est terminée.":"Les loups ont dévoré le village. Plus personne ne se réveillera.","fin");
+}
+function calerChrono(){
+  clearInterval(chronoTimer); chronoTimer=null;
+  if(!ETAT||ETAT.phase!=="debat") return;
+  chronoTimer=setInterval(()=>{
+    const el=$("#chrono"); if(!el){ clearInterval(chronoTimer); return; }
+    el.textContent=texteChrono();
+    el.classList.toggle("urgent",((ETAT.chronoFin||0)-Date.now())/1000<=30);
+  },1000);
+}
+
+/* ---------- composition ---------- */
+function defautCompo(n){
+  const c={loup:1,villageois:0,chasseur:1,sorciere:1,sbire:1,voyante:1,voleur:1};
+  c.villageois=Math.max(0,(n+3)-6); return c;
+}
+const totalCompo=c=>ORDRE.reduce((s,r)=>s+(c[r]||0),0);
+
+/* ---------- arbitrage (table) ---------- */
+async function distribuerRoles(){
+  const uids=Object.keys(JOUEURS);
+  const paquet=[];
+  ORDRE.forEach(r=>{ for(let k=0;k<(brouillonCompo[r]||0);k++) paquet.push(r); });
+  paquet.splice(paquet.indexOf("loup"),1);
+  melange(paquet);
+  const n=uids.length;
+  const roles=melange(["loup"].concat(paquet.slice(0,n-1)));
+  const centre=paquet.slice(n-1);
+  const ord=melange(uids.slice());
+  const attrib={}; ord.forEach((u,i)=>attrib[u]=roles[i]);
+  const meute=ord.filter(u=>attrib[u]==="loup");
+  const vivantsMap={}; ord.forEach(u=>vivantsMap[u]=true);
+
+  const majRoles={};
+  ord.forEach(u=>{
+    const o={role:attrib[u]};
+    if(attrib[u]==="loup"||attrib[u]==="sbire") o.meute=meute;
+    if(attrib[u]==="voyante") o.vue={regards:0,sondage:true,vues:{}};
+    majRoles[u]=o;
+  });
+  await R("roles").set(majRoles);
+  await R("prive").set({centre:centre,potion:true,sondage:true,regards:0,vues:{},echangeFait:false,cible:null,sauvee:false});
+  await R("actions").remove();
+  await R("votes").remove();
+  await R("demandes").remove();
+  await R("etat").set({phase:"distribution",nuit:1,ordre:ord,vivants:vivantsMap,revele:{},
+    compo:brouillonCompo,victime:null,sauvee:false,tire:null,chasseurUid:null,suite:null,
+    revote:false,exaequo:[],resultat:null,fin:null,chronoFin:0,centreRevele:null});
+}
+
+async function traiterDemandes(){
+  if(!estTable()||enTraitement) return;
+  const liste=Object.keys(DEMANDES||{});
+  if(!liste.length) return;
+  enTraitement=true;
+  try{
+    for(const uid of liste){
+      const d=DEMANDES[uid]; if(!d) continue;
+      const role=(ROLESALL[uid]||{}).role;
+      await R("demandes/"+uid).remove();
+      if(d.type==="proie"&&role==="loup"&&ETAT.phase==="nuit"&&estVivant(uid)){
+        await R("prive/cible").set(d.cible);
+        await pousserVues();
+        await R("actions/"+uid).set({n:ETAT.nuit});
+      }
+      else if(d.type==="fiole"&&role==="sorciere"&&ETAT.phase==="nuit"){
+        const versee=!!d.oui;
+        await R("prive/sauvee").set(versee);
+        if(versee) await R("prive/potion").set(false);
+        await R("roles/"+uid+"/vue/versee").set(versee);
+        await R("actions/"+uid).set({n:ETAT.nuit});
+      }
+      else if(d.type==="regard"&&role==="voyante"&&ETAT.phase==="nuit"){
+        const k=+d.k, vues=PRIVE.vues||{}, faits=PRIVE.regards||0;
+        if(faits<3&&!vues[k]){
+          vues[k]=true;
+          await R("prive/vues").set(vues);
+          await R("prive/regards").set(faits+1);
+          await R("roles/"+uid+"/vue").update({regards:faits+1,vues:vues});
+          await R("roles/"+uid+"/revelation").set({type:"centre",k:k,role:(PRIVE.centre||[])[k],faits:faits+1});
+          await R("actions/"+uid).set({n:ETAT.nuit});
+        }
+      }
+      else if(d.type==="sonde"&&role==="voyante"&&ETAT.phase==="nuit"){
+        if(PRIVE.sondage!==false){
+          await R("prive/sondage").set(false);
+          await R("roles/"+uid+"/vue/sondage").set(false);
+          await R("roles/"+uid+"/revelation").set({type:"joueur",nom:nomDe(d.cible),role:(ROLESALL[d.cible]||{}).role||"villageois"});
+          await R("actions/"+uid).set({n:ETAT.nuit});
+        }
+      }
+      else if(d.type==="echange"&&role==="voleur"&&ETAT.nuit===1&&!PRIVE.echangeFait){
+        const k=+d.k, centre=(PRIVE.centre||[]).slice();
+        const pris=centre[k]; centre[k]="voleur";
+        await R("prive/centre").set(centre);
+        await R("prive/echangeFait").set(true);
+        await R("roles/"+uid+"/role").set(pris);
+        if(pris==="loup"||pris==="sbire"){
+          const m=ordre().filter(u=>(ROLESALL[u]||{}).role==="loup");
+          if(pris==="loup"&&m.indexOf(uid)<0) m.push(uid);
+          await R("roles/"+uid+"/meute").set(m);
+        }
+        await R("roles/"+uid+"/revelation").set({type:"devenu",role:pris});
+        await R("actions/"+uid).set({n:ETAT.nuit});
+      }
+      else if(d.type==="tir"&&uid===ETAT.chasseurUid){
+        const viv=Object.assign({},ETAT.vivants); viv[d.cible]=false;
+        const rev=Object.assign({},ETAT.revele); rev[d.cible]=(ROLESALL[d.cible]||{}).role;
+        await R("etat").update({phase:"tir",vivants:viv,revele:rev,tire:d.cible,chasseurUid:null});
+      }
+    }
+  }catch(e){}
+  enTraitement=false;
+}
+
+async function pousserVues(){
+  const cible=PRIVE.cible||null;
+  for(const u of ordre()){
+    const r=(ROLESALL[u]||{}).role;
+    if(r==="loup") await R("roles/"+u+"/vue").update({cible:cible});
+    if(r==="sorciere") await R("roles/"+u+"/vue").update({cible:cible,potion:PRIVE.potion!==false});
+  }
+}
+
+async function nouvelleNuit(){
+  for(const u of ordre()) await R("roles/"+u+"/revelation").remove();
+  await R("prive").update({cible:null,sauvee:false});
+  for(const u of ordre()){
+    const r=(ROLESALL[u]||{}).role;
+    if(r==="loup"||r==="sorciere") await R("roles/"+u+"/vue").update({cible:null,potion:PRIVE.potion!==false,versee:null});
+  }
+  await R("actions").remove();
+  await R("etat").update({phase:"nuit",nuit:(ETAT.nuit||1)+1,revote:false,exaequo:[],resultat:null});
+}
+
+function issue(viv){
+  const L=ordre().filter(u=>viv[u]&&(ROLESALL[u]||{}).role==="loup").length;
+  const V=ordre().filter(u=>viv[u]).length-L;
+  if(L===0) return "village";
+  if(L>=V) return "loup";
+  if(L>=V-1) return "ultime";
+  return null;
+}
+async function terminer(fin){
+  const rev={}; ordre().forEach(u=>rev[u]=(ROLESALL[u]||{}).role);
+  await R("etat").update({phase:"fin",fin:fin,revele:rev,centreRevele:PRIVE.centre||[]});
+}
+async function suite(viv,apresJour){
+  const r=issue(viv);
+  if(r==="village"||r==="loup") return terminer(r);
+  if(apresJour) return R("etat").update({phase:"debat",revote:false,chronoFin:Date.now()+300000});
+  if(r==="ultime") return R("etat").update({phase:"ultime"});
+  return nouvelleNuit();
+}
+
+async function leverJour(){
+  const cible=PRIVE.cible||null, sauvee=!!PRIVE.sauvee;
+  const viv=Object.assign({},ETAT.vivants), rev=Object.assign({},ETAT.revele);
+  if(cible&&!sauvee){ viv[cible]=false; rev[cible]=(ROLESALL[cible]||{}).role; }
+  await R("etat").update({phase:"matin",vivants:viv,revele:rev,victime:cible,sauvee:sauvee});
+}
+async function apresMatin(){
+  const v=ETAT.victime;
+  if(!ETAT.sauvee&&v&&(ROLESALL[v]||{}).role==="chasseur")
+    return R("etat").update({phase:"chasseur",chasseurUid:v,suite:"jour"});
+  return suite(ETAT.vivants,true);
+}
+const apresTir=()=>suite(ETAT.vivants,ETAT.suite==="jour");
+async function depouiller(){
+  const c={};
+  vivants().forEach(u=>{ const v=VOTES[u]; if(v&&v.t===tourVote()&&v.c) c[v.c]=(c[v.c]||0)+1; });
+  const compte=Object.keys(c).map(u=>({uid:u,n:c[u]})).sort((a,b)=>b.n-a.n);
+  if(!compte.length) return R("etat").update({phase:"resultat",resultat:{egalite:true,compte:[],definitif:true}});
+  const max=compte[0].n, tetes=compte.filter(x=>x.n===max);
+  if(tetes.length>1) return R("etat").update({phase:"resultat",exaequo:tetes.map(t=>t.uid),
+    resultat:{egalite:true,compte:compte,definitif:!!ETAT.revote}});
+  const elu=compte[0].uid;
+  const viv=Object.assign({},ETAT.vivants); viv[elu]=false;
+  const rev=Object.assign({},ETAT.revele); rev[elu]=(ROLESALL[elu]||{}).role;
+  return R("etat").update({phase:"resultat",vivants:viv,revele:rev,resultat:{egalite:false,compte:compte,elu:elu}});
+}
+async function apresVote(){
+  const r=ETAT.resultat||{};
+  if(!r.egalite&&(ROLESALL[r.elu]||{}).role==="chasseur")
+    return R("etat").update({phase:"chasseur",chasseurUid:r.elu,suite:"nuit"});
+  return suite(ETAT.vivants,false);
+}
+
+/* ---------- actions joueur ---------- */
+let marqueEnVol=null;
+async function marquerAction(){
+  if(!ETAT||aAgi(ME)||marqueEnVol===ETAT.nuit) return;
+  marqueEnVol=ETAT.nuit;
+  try{ await R("actions/"+ME).set({n:ETAT.nuit}); }catch(e){ marqueEnVol=null; }
+}
+const demander=o=>R("demandes/"+ME).set(o).catch(()=>{});
+
+/* ---------- interactions ---------- */
+function brancher(){
+  const on=(s,f)=>{ const e=$(s); if(e) e.onclick=f; };
+  $("#son").onclick=()=>{ VOIX=!VOIX; garder("lg_voix",VOIX?"1":"0"); if(!VOIX) taire(); derniereCle=null; rendre(); };
+  on("#reessayer",()=>location.reload());
+  on("#oublier",()=>{ garder("lg_mode",""); garder("lg_code",""); location.reload(); });
+
+  on("#creer",async()=>{
+    const code=Array.from({length:4},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random()*24)]).join("");
+    CODE=code; MODE="table"; garder("lg_code",code); garder("lg_mode","table");
+    await db.ref("salons/"+code+"/meta").set({tableUid:ME,cree:Date.now()});
+    await db.ref("salons/"+code+"/etat").set({phase:"salon",nuit:0,ordre:[],vivants:{},revele:{}});
+    abonner(); rendre();
+  });
+  on("#rejoindre",async()=>{
+    const v=($("#code-salon").value||"").trim().toUpperCase();
+    if(v.length!==4){ $("#err").style.display="block"; return; }
+    const s=await db.ref("salons/"+v+"/meta").get();
+    if(!s.exists()){ $("#err").style.display="block"; return; }
+    CODE=v; MODE="joueur"; garder("lg_code",v); garder("lg_mode","joueur");
+    abonner(); rendre();
+  });
+  on("#s-asseoir",async()=>{
+    const v=($("#mon-nom").value||"").trim();
+    const pris=Object.keys(JOUEURS).some(u=>u!==ME&&nomDe(u).toLowerCase()===v.toLowerCase());
+    if(!v||pris){ $("#err").style.display="block"; return; }
+    try{ await R("joueurs/"+ME).set({nom:v,ts:Date.now()}); }
+    catch(e){ ERREUR="Impossible de s'inscrire. Vérifie que les règles de sécurité sont bien enregistrées."; }
+    rendre();
+  });
+  on("#quitter-siege",async()=>{ try{ await R("joueurs/"+ME).remove(); }catch(e){} rendre(); });
+  on("#vider",async()=>{ await R("joueurs").remove(); rendre(); });
+  on("#vers-compo",()=>{ brouillonCompo=defautCompo(Object.keys(JOUEURS).length); R("etat/phase").set("compo"); });
+  on("#retour-salon",()=>R("etat/phase").set("salon"));
+  on("#auto-compo",()=>{
+    const besoin=Object.keys(JOUEURS).length+3;
+    const sans=totalCompo(brouillonCompo)-(brouillonCompo.villageois||0);
+    brouillonCompo.villageois=Math.max(0,besoin-sans); rendre();
+  });
+  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{
+    const r=b.dataset.plus,max=r==="loup"?3:r==="villageois"?99:1;
+    if((brouillonCompo[r]||0)<max) brouillonCompo[r]=(brouillonCompo[r]||0)+1; rendre(); });
+  document.querySelectorAll("[data-moins]").forEach(b=>b.onclick=()=>{
+    const r=b.dataset.moins,min=r==="loup"?1:0;
+    if((brouillonCompo[r]||0)>min) brouillonCompo[r]=brouillonCompo[r]-1; rendre(); });
+  on("#distribuer",distribuerRoles);
+  on("#vers-nuit",async()=>{ await R("actions").remove(); await R("etat/phase").set("nuit"); });
+  on("#lever-jour",leverJour);
+  on("#apres-matin",apresMatin);
+  on("#apres-tir",apresTir);
+  on("#ouvrir-ultime",()=>R("etat").update({phase:"debat",revote:false,chronoFin:Date.now()+300000}));
+  on("#aller-vote",async()=>{ await R("votes").remove(); await R("etat/phase").set("vote"); });
+  on("#depouiller",depouiller);
+  on("#revoter",()=>R("etat").update({phase:"debat",revote:true,chronoFin:Date.now()+300000}));
+  on("#apres-vote",apresVote);
+  on("#rejouer",async()=>{
+    await R("actions").remove(); await R("votes").remove(); await R("demandes").remove(); await R("roles").remove();
+    await R("etat").set({phase:"salon",nuit:0,ordre:[],vivants:{},revele:{}});
+  });
+
+  on("#carte-vue",marquerAction);
+  on("#fin-action",async()=>{ vuePanneau={}; await marquerAction(); });
+  on("#passer-nuit",marquerAction);
+  on("#changer-proie",async()=>{ marqueEnVol=null; try{ await R("actions/"+ME).remove(); }catch(e){} rendre(); });
+  on("#menu-sonde",()=>{ vuePanneau.sonde=true; rendre(); });
+  on("#retour-voyante",()=>{ vuePanneau.sonde=false; rendre(); });
+  document.querySelectorAll("[data-proie]").forEach(b=>b.onclick=()=>demander({type:"proie",cible:b.dataset.proie}));
+  document.querySelectorAll("[data-fiole]").forEach(b=>b.onclick=()=>demander({type:"fiole",oui:b.dataset.fiole==="1"}));
+  document.querySelectorAll("[data-vol]").forEach(b=>b.onclick=()=>demander({type:"echange",k:+b.dataset.vol}));
+  document.querySelectorAll("[data-oeil]").forEach(b=>b.onclick=()=>demander({type:"regard",k:+b.dataset.oeil}));
+  document.querySelectorAll("[data-sonde]").forEach(b=>b.onclick=()=>{ vuePanneau.sonde=false; demander({type:"sonde",cible:b.dataset.sonde}); });
+  document.querySelectorAll("[data-tir]").forEach(b=>b.onclick=()=>demander({type:"tir",cible:b.dataset.tir}));
+  document.querySelectorAll("[data-vote]").forEach(b=>b.onclick=async()=>{
+    vuePanneau.vote=true;
+    try{ await R("votes/"+ME).set({t:tourVote(),c:b.dataset.vote}); }catch(e){}
+    rendre();
+  });
+}
+
+/* ---------- abonnements ---------- */
+function couper(){ abonnements.forEach(f=>{try{f();}catch(e){}}); abonnements=[]; }
+function suivre(chemin,cb){
+  const ref=R(chemin);
+  const h=ref.on("value",s=>{ cb(s.val()); rendre(); },()=>{});
+  abonnements.push(()=>ref.off("value",h));
+}
+function abonner(){
+  couper();
+  suivre("meta",v=>META=v);
+  suivre("etat",v=>{ ETAT=v; if(ETAT&&!ETAT.vivants) ETAT.vivants={}; });
+  suivre("joueurs",v=>JOUEURS=v||{});
+  suivre("actions",v=>ACTIONS=v||{});
+  if(estTable()){
+    suivre("roles",v=>ROLESALL=v||{});
+    suivre("prive",v=>PRIVE=v||{});
+    suivre("votes",v=>VOTES=v||{});
+    suivre("demandes",v=>{ DEMANDES=v||{}; traiterDemandes(); });
+  } else {
+    suivre("roles/"+ME,v=>MONROLE=v);
+  }
+}
+
+/* ---------- démarrage ---------- */
+firebase.initializeApp(firebaseConfig);
+db=firebase.database();
+firebase.auth().signInAnonymously().catch(e=>{
+  ERREUR="Connexion anonyme refusée ("+e.code+"). Vérifie qu'elle est bien activée dans Firebase.";
+  PRET=true; rendre();
+});
+firebase.auth().onAuthStateChanged(u=>{
+  if(!u) return;
+  ME=u.uid; PRET=true;
+  if(MODE&&CODE) abonner();
+  rendre();
+});
+rendre();
+</script>
+</body>
+</html>
